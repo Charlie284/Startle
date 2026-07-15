@@ -1,0 +1,10 @@
+{
+  "note": "Placeholder metadata only. Startle intentionally bundles no jumpscare footage.",
+  "example": {
+    "displayName": "Your Scare Video",
+    "supportedExtensions": ["mp4", "mov", "m4v"],
+    "defaultVolume": 1.0,
+    "trimStartSeconds": 0.0,
+    "trimEndSeconds": null
+  }
+}

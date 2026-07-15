@@ -1,0 +1,123 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		B10000000000000000000001 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000000000000000000001 /* Models.swift */; };
+		B10000000000000000000002 /* SettingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000000000000000000002 /* SettingsStore.swift */; };
+		B10000000000000000000003 /* ScheduleEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000000000000000000003 /* ScheduleEngine.swift */; };
+		B10000000000000000000004 /* VideoLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000000000000000000004 /* VideoLibrary.swift */; };
+		B10000000000000000000005 /* SystemActivityMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000000000000000000005 /* SystemActivityMonitor.swift */; };
+		B10000000000000000000006 /* ScareScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000000000000000000006 /* ScareScheduler.swift */; };
+		B10000000000000000000007 /* ScareWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000000000000000000007 /* ScareWindowController.swift */; };
+		B10000000000000000000008 /* ScareCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000000000000000000008 /* ScareCoordinator.swift */; };
+		B10000000000000000000009 /* LaunchAtLoginManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000000000000000000009 /* LaunchAtLoginManager.swift */; };
+		B1000000000000000000000A /* EmergencyShortcutManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1000000000000000000000A /* EmergencyShortcutManager.swift */; };
+		B20000000000000000000001 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20000000000000000000001 /* AppState.swift */; };
+		B20000000000000000000002 /* StartleApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20000000000000000000002 /* StartleApp.swift */; };
+		B20000000000000000000003 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20000000000000000000003 /* ContentView.swift */; };
+		B20000000000000000000004 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F20000000000000000000004 /* Assets.xcassets */; };
+		B20000000000000000000005 /* SampleVideoMetadata.json in Resources */ = {isa = PBXBuildFile; fileRef = F20000000000000000000005 /* SampleVideoMetadata.json */; };
+		B30000000000000000000001 /* ScheduleEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F30000000000000000000001 /* ScheduleEngineTests.swift */; };
+		B40000000000000000000001 /* StartleCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = P10000000000000000000002 /* StartleCore.framework */; };
+		B40000000000000000000002 /* StartleCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = P10000000000000000000002 /* StartleCore.framework */; };
+		B40000000000000000000003 /* StartleCore.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = P10000000000000000000002 /* StartleCore.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		E10000000000000000000001 /* Embed Frameworks */ = {isa = PBXCopyFilesBuildPhase; buildActionMask = 2147483647; dstPath = ""; dstSubfolderSpec = 10; files = (B40000000000000000000003, ); name = "Embed Frameworks"; runOnlyForDeploymentPostprocessing = 0; };
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXContainerItemProxy section */
+		C10000000000000000000001 = {isa = PBXContainerItemProxy; containerPortal = A10000000000000000000001 /* Project object */; proxyType = 1; remoteGlobalIDString = T10000000000000000000002; remoteInfo = StartleCore; };
+		C10000000000000000000002 = {isa = PBXContainerItemProxy; containerPortal = A10000000000000000000001 /* Project object */; proxyType = 1; remoteGlobalIDString = T10000000000000000000002; remoteInfo = StartleCore; };
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		F10000000000000000000001 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
+		F10000000000000000000002 /* SettingsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsStore.swift; sourceTree = "<group>"; };
+		F10000000000000000000003 /* ScheduleEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleEngine.swift; sourceTree = "<group>"; };
+		F10000000000000000000004 /* VideoLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoLibrary.swift; sourceTree = "<group>"; };
+		F10000000000000000000005 /* SystemActivityMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemActivityMonitor.swift; sourceTree = "<group>"; };
+		F10000000000000000000006 /* ScareScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScareScheduler.swift; sourceTree = "<group>"; };
+		F10000000000000000000007 /* ScareWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScareWindowController.swift; sourceTree = "<group>"; };
+		F10000000000000000000008 /* ScareCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScareCoordinator.swift; sourceTree = "<group>"; };
+		F10000000000000000000009 /* LaunchAtLoginManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchAtLoginManager.swift; sourceTree = "<group>"; };
+		F1000000000000000000000A /* EmergencyShortcutManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmergencyShortcutManager.swift; sourceTree = "<group>"; };
+		F20000000000000000000001 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
+		F20000000000000000000002 /* StartleApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StartleApp.swift; sourceTree = "<group>"; };
+		F20000000000000000000003 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		F20000000000000000000004 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		F20000000000000000000005 /* SampleVideoMetadata.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = SampleVideoMetadata.json; sourceTree = "<group>"; };
+		F30000000000000000000001 /* ScheduleEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleEngineTests.swift; sourceTree = "<group>"; };
+		F40000000000000000000001 /* Startle.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Startle.entitlements; sourceTree = "<group>"; };
+		F40000000000000000000002 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		P10000000000000000000001 /* Startle.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Startle.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		P10000000000000000000002 /* StartleCore.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = StartleCore.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		P10000000000000000000003 /* StartleCoreTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = StartleCoreTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		H10000000000000000000001 = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (B40000000000000000000001, ); runOnlyForDeploymentPostprocessing = 0; };
+		H10000000000000000000002 = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+		H10000000000000000000003 = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (B40000000000000000000002, ); runOnlyForDeploymentPostprocessing = 0; };
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		G10000000000000000000001 = {isa = PBXGroup; children = (G10000000000000000000002, G10000000000000000000003, G10000000000000000000004, G10000000000000000000005, G10000000000000000000006, ); sourceTree = "<group>"; };
+		G10000000000000000000002 /* StartleCore */ = {isa = PBXGroup; children = (F10000000000000000000001, F10000000000000000000002, F10000000000000000000003, F10000000000000000000004, F10000000000000000000005, F10000000000000000000006, F10000000000000000000007, F10000000000000000000008, F10000000000000000000009, F1000000000000000000000A, ); path = Sources/StartleCore; sourceTree = SOURCE_ROOT; };
+		G10000000000000000000003 /* StartleApp */ = {isa = PBXGroup; children = (F20000000000000000000001, F20000000000000000000002, F20000000000000000000003, G10000000000000000000007, ); path = Sources/StartleApp; sourceTree = SOURCE_ROOT; };
+		G10000000000000000000007 /* Resources */ = {isa = PBXGroup; children = (F20000000000000000000004, F20000000000000000000005, ); path = Resources; sourceTree = "<group>"; };
+		G10000000000000000000004 /* Tests */ = {isa = PBXGroup; children = (F30000000000000000000001, ); path = Tests/StartleCoreTests; sourceTree = SOURCE_ROOT; };
+		G10000000000000000000005 /* Config */ = {isa = PBXGroup; children = (F40000000000000000000001, F40000000000000000000002, ); path = Config; sourceTree = SOURCE_ROOT; };
+		G10000000000000000000006 /* Products */ = {isa = PBXGroup; children = (P10000000000000000000001, P10000000000000000000002, P10000000000000000000003, ); name = Products; sourceTree = "<group>"; };
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		T10000000000000000000001 /* Startle */ = {isa = PBXNativeTarget; buildConfigurationList = L20000000000000000000001; buildPhases = (S20000000000000000000001, H10000000000000000000001, E10000000000000000000001, R10000000000000000000001, ); buildRules = (); dependencies = (D10000000000000000000001, ); name = Startle; productName = Startle; productReference = P10000000000000000000001; productType = "com.apple.product-type.application"; };
+		T10000000000000000000002 /* StartleCore */ = {isa = PBXNativeTarget; buildConfigurationList = L20000000000000000000002; buildPhases = (S20000000000000000000002, H10000000000000000000002, ); buildRules = (); dependencies = (); name = StartleCore; productName = StartleCore; productReference = P10000000000000000000002; productType = "com.apple.product-type.framework"; };
+		T10000000000000000000003 /* StartleCoreTests */ = {isa = PBXNativeTarget; buildConfigurationList = L20000000000000000000003; buildPhases = (S20000000000000000000003, H10000000000000000000003, ); buildRules = (); dependencies = (D10000000000000000000002, ); name = StartleCoreTests; productName = StartleCoreTests; productReference = P10000000000000000000003; productType = "com.apple.product-type.bundle.unit-test"; };
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		A10000000000000000000001 /* Project object */ = {isa = PBXProject; attributes = {BuildIndependentTargetsInParallel = 1; LastSwiftUpdateCheck = 1600; LastUpgradeCheck = 1600; TargetAttributes = {T10000000000000000000001 = {CreatedOnToolsVersion = 16.0; }; T10000000000000000000002 = {CreatedOnToolsVersion = 16.0; }; T10000000000000000000003 = {CreatedOnToolsVersion = 16.0; }; }; }; buildConfigurationList = L10000000000000000000001; compatibilityVersion = "Xcode 16.0"; developmentRegion = en; hasScannedForEncodings = 0; knownRegions = (en, Base, ); mainGroup = G10000000000000000000001; productRefGroup = G10000000000000000000006; projectDirPath = ""; projectRoot = ""; targets = (T10000000000000000000001, T10000000000000000000002, T10000000000000000000003, ); };
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		R10000000000000000000001 = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (B20000000000000000000004, B20000000000000000000005, ); runOnlyForDeploymentPostprocessing = 0; };
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		S20000000000000000000001 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (B20000000000000000000001, B20000000000000000000002, B20000000000000000000003, ); runOnlyForDeploymentPostprocessing = 0; };
+		S20000000000000000000002 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (B10000000000000000000001, B10000000000000000000002, B10000000000000000000003, B10000000000000000000004, B10000000000000000000005, B10000000000000000000006, B10000000000000000000007, B10000000000000000000008, B10000000000000000000009, B1000000000000000000000A, ); runOnlyForDeploymentPostprocessing = 0; };
+		S20000000000000000000003 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (B30000000000000000000001, ); runOnlyForDeploymentPostprocessing = 0; };
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		D10000000000000000000001 = {isa = PBXTargetDependency; target = T10000000000000000000002; targetProxy = C10000000000000000000001; };
+		D10000000000000000000002 = {isa = PBXTargetDependency; target = T10000000000000000000002; targetProxy = C10000000000000000000002; };
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		C20000000000000000000001 /* Debug */ = {isa = XCBuildConfiguration; buildSettings = {CLANG_ENABLE_MODULES = YES; MACOSX_DEPLOYMENT_TARGET = 14.0; SDKROOT = macosx; SWIFT_VERSION = 5.0; }; name = Debug; };
+		C20000000000000000000002 /* Release */ = {isa = XCBuildConfiguration; buildSettings = {CLANG_ENABLE_MODULES = YES; MACOSX_DEPLOYMENT_TARGET = 14.0; SDKROOT = macosx; SWIFT_COMPILATION_MODE = wholemodule; SWIFT_OPTIMIZATION_LEVEL = "-O"; SWIFT_VERSION = 5.0; }; name = Release; };
+		C20000000000000000000003 /* Debug */ = {isa = XCBuildConfiguration; buildSettings = {ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon; CODE_SIGN_ENTITLEMENTS = Config/Startle.entitlements; CODE_SIGN_STYLE = Automatic; CURRENT_PROJECT_VERSION = 1; GENERATE_INFOPLIST_FILE = NO; INFOPLIST_FILE = Config/Info.plist; MACOSX_DEPLOYMENT_TARGET = 14.0; MARKETING_VERSION = 1.0; PRODUCT_BUNDLE_IDENTIFIER = com.startle.app; PRODUCT_NAME = "$(TARGET_NAME)"; SWIFT_EMIT_LOC_STRINGS = YES; SWIFT_VERSION = 5.0; }; name = Debug; };
+		C20000000000000000000004 /* Release */ = {isa = XCBuildConfiguration; buildSettings = {ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon; CODE_SIGN_ENTITLEMENTS = Config/Startle.entitlements; CODE_SIGN_STYLE = Automatic; CURRENT_PROJECT_VERSION = 1; GENERATE_INFOPLIST_FILE = NO; INFOPLIST_FILE = Config/Info.plist; MACOSX_DEPLOYMENT_TARGET = 14.0; MARKETING_VERSION = 1.0; PRODUCT_BUNDLE_IDENTIFIER = com.startle.app; PRODUCT_NAME = "$(TARGET_NAME)"; SWIFT_COMPILATION_MODE = wholemodule; SWIFT_OPTIMIZATION_LEVEL = "-O"; SWIFT_VERSION = 5.0; }; name = Release; };
+		C20000000000000000000005 /* Debug */ = {isa = XCBuildConfiguration; buildSettings = {DEFINES_MODULE = YES; DYLIB_COMPATIBILITY_VERSION = 1; DYLIB_CURRENT_VERSION = 1; DYLIB_INSTALL_NAME_BASE = "@rpath"; INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks"; MACOSX_DEPLOYMENT_TARGET = 14.0; PRODUCT_BUNDLE_IDENTIFIER = com.startle.core; PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)"; SKIP_INSTALL = YES; SWIFT_VERSION = 5.0; }; name = Debug; };
+		C20000000000000000000006 /* Release */ = {isa = XCBuildConfiguration; buildSettings = {DEFINES_MODULE = YES; DYLIB_COMPATIBILITY_VERSION = 1; DYLIB_CURRENT_VERSION = 1; DYLIB_INSTALL_NAME_BASE = "@rpath"; INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks"; MACOSX_DEPLOYMENT_TARGET = 14.0; PRODUCT_BUNDLE_IDENTIFIER = com.startle.core; PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)"; SKIP_INSTALL = YES; SWIFT_COMPILATION_MODE = wholemodule; SWIFT_OPTIMIZATION_LEVEL = "-O"; SWIFT_VERSION = 5.0; }; name = Release; };
+		C20000000000000000000007 /* Debug */ = {isa = XCBuildConfiguration; buildSettings = {BUNDLE_LOADER = ""; GENERATE_INFOPLIST_FILE = YES; MACOSX_DEPLOYMENT_TARGET = 14.0; PRODUCT_BUNDLE_IDENTIFIER = com.startle.tests; PRODUCT_NAME = "$(TARGET_NAME)"; SWIFT_VERSION = 5.0; }; name = Debug; };
+		C20000000000000000000008 /* Release */ = {isa = XCBuildConfiguration; buildSettings = {BUNDLE_LOADER = ""; GENERATE_INFOPLIST_FILE = YES; MACOSX_DEPLOYMENT_TARGET = 14.0; PRODUCT_BUNDLE_IDENTIFIER = com.startle.tests; PRODUCT_NAME = "$(TARGET_NAME)"; SWIFT_COMPILATION_MODE = wholemodule; SWIFT_OPTIMIZATION_LEVEL = "-O"; SWIFT_VERSION = 5.0; }; name = Release; };
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		L10000000000000000000001 = {isa = XCConfigurationList; buildConfigurations = (C20000000000000000000001, C20000000000000000000002, ); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+		L20000000000000000000001 = {isa = XCConfigurationList; buildConfigurations = (C20000000000000000000003, C20000000000000000000004, ); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+		L20000000000000000000002 = {isa = XCConfigurationList; buildConfigurations = (C20000000000000000000005, C20000000000000000000006, ); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+		L20000000000000000000003 = {isa = XCConfigurationList; buildConfigurations = (C20000000000000000000007, C20000000000000000000008, ); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+/* End XCConfigurationList section */
+	};
+	rootObject = A10000000000000000000001 /* Project object */;
+}
