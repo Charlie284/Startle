@@ -4,7 +4,7 @@ Startle is a native macOS prank/productivity utility that waits in the menu bar 
 
 [![CI](https://github.com/Charlie284/Startle/actions/workflows/ci.yml/badge.svg)](https://github.com/Charlie284/Startle/actions/workflows/ci.yml)
 
-**Status:** Pre-release. Source builds are available for development and testing. A production download should be published only after completing the signing, notarization, and packaged-app checks in [RELEASE.md](RELEASE.md).
+**Status:** Pre-release. Source builds and unsigned preview downloads are available for development and testing. A trusted production download should be published only after completing the signing, notarization, and packaged-app checks in [RELEASE.md](RELEASE.md).
 
 > **Safety:** Do not use Startle on anyone with a heart condition, epilepsy, severe anxiety, PTSD, or sound sensitivity. Obtain clear consent. Never use it where a sudden reaction could cause injury.
 
@@ -39,6 +39,12 @@ xcodebuild \
 ```
 
 The Xcode target enables App Sandbox and Hardened Runtime. Distribution still requires an Apple Developer signing identity and notarization; project builds and unsigned CI artifacts are not substitutes for those checks.
+
+## Preview downloads
+
+Version tags matching `v*` build a universal macOS app and publish it as a GitHub prerelease with a SHA-256 checksum. These downloads are unsigned because the project does not currently use a paid Apple Developer identity.
+
+macOS will identify an unsigned download as coming from an unidentified developer. After verifying the checksum, extract the ZIP and use **Control-click → Open** for the first launch. Do not treat an unsigned preview as equivalent to a Developer ID-signed and notarized release.
 
 ## Architecture
 
@@ -95,6 +101,7 @@ swift test
 - [CONTRIBUTING.md](CONTRIBUTING.md) explains development and pull-request expectations.
 - [SECURITY.md](SECURITY.md) explains responsible vulnerability reporting.
 - [RELEASE.md](RELEASE.md) defines the signed and notarized release gate.
+- `.github/workflows/release.yml` publishes unsigned prereleases from version tags.
 - [CHANGELOG.md](CHANGELOG.md) tracks user-visible changes.
 
 Startle is available under the [MIT License](LICENSE).

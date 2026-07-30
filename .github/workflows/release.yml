@@ -1,0 +1,106 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v[0-9]*"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Build unsigned release
+    runs-on: macos-15
+    timeout-minutes: 25
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7
+
+      - name: Show toolchain
+        run: |
+          xcodebuild -version
+          swift --version
+          gh --version
+
+      - name: Validate source
+        run: |
+          plutil -lint Config/Info.plist
+          plutil -lint Config/Startle.entitlements
+          plutil -lint Sources/StartleApp/Resources/PrivacyInfo.xcprivacy
+          xcrun swift-format lint --recursive --strict Sources Tests Package.swift
+
+      - name: Run release-mode package tests
+        run: swift test -c release -Xswiftc -warnings-as-errors
+
+      - name: Run Xcode tests
+        run: |
+          xcodebuild \
+            -project Startle.xcodeproj \
+            -scheme Startle \
+            -destination 'platform=macOS' \
+            CODE_SIGNING_ALLOWED=NO \
+            ONLY_ACTIVE_ARCH=YES \
+            SWIFT_TREAT_WARNINGS_AS_ERRORS=YES \
+            test
+
+      - name: Build universal release app
+        run: |
+          release_version=${GITHUB_REF_NAME#v}
+          xcodebuild \
+            -project Startle.xcodeproj \
+            -scheme Startle \
+            -configuration Release \
+            -destination 'generic/platform=macOS' \
+            -derivedDataPath build/DerivedData \
+            CODE_SIGNING_ALLOWED=NO \
+            MARKETING_VERSION="$release_version" \
+            CURRENT_PROJECT_VERSION="$GITHUB_RUN_NUMBER" \
+            SWIFT_TREAT_WARNINGS_AS_ERRORS=YES \
+            build
+
+      - name: Verify unsigned bundle
+        run: ./Scripts/verify-unsigned-build.sh build/DerivedData/Build/Products/Release/Startle.app
+
+      - name: Package release assets
+        run: |
+          release_version=${GITHUB_REF_NAME#v}
+          archive_name="Startle-${release_version}-macOS-unsigned.zip"
+          mkdir -p dist
+          ditto \
+            -c -k --sequesterRsrc --keepParent \
+            build/DerivedData/Build/Products/Release/Startle.app \
+            "dist/$archive_name"
+          cd dist
+          shasum -a 256 "$archive_name" > "$archive_name.sha256"
+
+      - name: Publish prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          release_version=${GITHUB_REF_NAME#v}
+          archive_name="Startle-${release_version}-macOS-unsigned.zip"
+          release_notes="Unsigned preview build. macOS will identify this app as coming from an unidentified developer. Review the installation notes in the repository before opening it."
+
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release upload \
+              "$GITHUB_REF_NAME" \
+              "dist/$archive_name" \
+              "dist/$archive_name.sha256" \
+              --clobber
+          else
+            gh release create \
+              "$GITHUB_REF_NAME" \
+              "dist/$archive_name" \
+              "dist/$archive_name.sha256" \
+              --verify-tag \
+              --prerelease \
+              --title "Startle $GITHUB_REF_NAME (unsigned)" \
+              --notes "$release_notes" \
+              --generate-notes
+          fi

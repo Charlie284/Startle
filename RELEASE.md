@@ -2,6 +2,12 @@
 
 Startle is not ready to distribute merely because `swift test` passes. A release must also be archived, signed, notarized, and exercised as the packaged sandboxed app.
 
+## Unsigned preview releases
+
+Pushing a version tag such as `v1.0.0` runs `.github/workflows/release.yml`. The workflow repeats the source and Xcode tests, builds a universal macOS app, verifies the unsigned bundle, and publishes a prerelease ZIP with its SHA-256 checksum.
+
+Unsigned previews are intended for development and evaluation. Gatekeeper will identify them as coming from an unidentified developer, and they do not satisfy the production release process below.
+
 ## 1. Prepare the version
 
 1. Start from a clean default branch with passing CI.
