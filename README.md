@@ -1,6 +1,6 @@
 # Startle
 
-Startle is a native macOS prank/productivity utility that waits in the menu bar and plays a randomly selected local video at carefully constrained times. It is built entirely with SwiftUI, AppKit, AVFoundation, and public Apple frameworks.
+Startle is a native macOS prank/productivity utility that waits in the menu bar and plays a randomly selected local video at carefully constrained times. It is built with SwiftUI, AppKit, AVFoundation, public Apple frameworks, and Sparkle; it does not use private APIs.
 
 [![CI](https://github.com/Charlie284/Startle/actions/workflows/ci.yml/badge.svg)](https://github.com/Charlie284/Startle/actions/workflows/ci.yml)
 
@@ -48,6 +48,8 @@ Version tags matching `v*` build a universal macOS app and publish it as a GitHu
 
 After verifying the checksum, open the DMG and drag **Startle** to the **Applications** shortcut. macOS will identify the app as coming from an unidentified developer, so use **Control-click → Open** in Applications for the first launch. Do not treat an unsigned preview as equivalent to a Developer ID-signed and notarized release.
 
+Once installed, Startle checks for updates through Sparkle. You can also choose **Check for Updates…** from the app menu, menu-bar menu, or About screen. Update archives are verified with Startle's Ed25519 release key before installation.
+
 ## Architecture
 
 - `SettingsStore` persists simple and structured preferences through Codable data in UserDefaults.
@@ -59,6 +61,7 @@ After verifying the checksum, open the DMG and drag **Startle** to the **Applica
 - `ScareWindowController` preloads AVFoundation media, creates borderless high-level AppKit windows, supports every display mode, maintains aspect ratio or crop-to-fill, captures Escape, restores the cursor and previous app, and removes all observers/resources.
 - `EmergencyShortcutManager` registers **Command–Option–Shift–Escape** as a system hot key using the public Carbon hot-key API. Scheduled scares fail closed until that registration succeeds.
 - `LaunchAtLoginManager` wraps `SMAppService.mainApp` and respects “Never run at login.”
+- `SoftwareUpdater` uses Sparkle's sandboxed installer and downloader services to verify, install, and relaunch updates from the signed release feed.
 - SwiftUI views provide onboarding, Dashboard, Videos, Schedule, Safety, Appearance, About, drag-and-drop, per-video controls, and a persistent `MenuBarExtra`.
 
 ## Scheduling and wake behavior
@@ -69,7 +72,7 @@ Only one scheduling task exists at a time. Disabling scares cancels it. Preferen
 
 Startle is sandboxed. The file picker grants read-only access only to videos selected by the user; bookmarks preserve that access across launches. Videos are never copied or uploaded. Device-running, Apple screen-capture app, display, battery, output-volume, and window checks use public system APIs. Focus status is unavailable through public macOS APIs, and third-party sharing detection is best-effort.
 
-Startle contains no analytics, advertising SDKs, remote services, or telemetry. Its privacy manifest declares no tracking or collected data. Local file paths and security-scoped bookmark data remain on the Mac.
+Startle contains no analytics, advertising SDKs, or telemetry. Its only network use is checking for and downloading signed releases from GitHub through Sparkle. Its privacy manifest declares no tracking or collected data. Local file paths and security-scoped bookmark data remain on the Mac.
 
 Automatic safety checks can be incomplete when macOS or another app does not expose the needed state. Read [SAFETY.md](SAFETY.md) before enabling scheduled scares.
 

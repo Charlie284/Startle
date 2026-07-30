@@ -15,5 +15,9 @@
     <key>NSHighResolutionCapable</key><true/>
     <key>NSHumanReadableCopyright</key><string>Copyright © 2026 Startle contributors.</string>
     <key>NSSupportsAutomaticGraphicsSwitching</key><true/>
+    <key>SUEnableDownloaderService</key><true/>
+    <key>SUEnableInstallerLauncherService</key><true/>
+    <key>SUFeedURL</key><string>https://github.com/Charlie284/Startle/releases/download/appcast/appcast.xml</string>
+    <key>SUPublicEDKey</key><string>zrBtzrc2pGL/vji3HnZBRptI2HLURhTT4tWmO0jMpzk=</string>
 </dict>
 </plist>

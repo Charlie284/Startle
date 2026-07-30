@@ -6,21 +6,21 @@ on:
       - "v[0-9]*"
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: release-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
-  release:
+  build:
     name: Build unsigned release
     runs-on: macos-15
     timeout-minutes: 25
 
     steps:
       - name: Check out source
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Show toolchain
         run: |
@@ -75,6 +75,74 @@ jobs:
             dist \
             "Startle-${release_version}-macOS-unsigned"
 
+      - name: Upload release inputs
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: release-${{ github.ref_name }}
+          path: dist
+          if-no-files-found: error
+          retention-days: 1
+
+  publish:
+    name: Sign and publish release
+    needs: build
+    runs-on: macos-15
+    timeout-minutes: 10
+    environment: release
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download release inputs
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          name: release-${{ github.ref_name }}
+          path: dist
+
+      - name: Install pinned Sparkle signing tool
+        env:
+          SPARKLE_ARCHIVE_SHA256: ce89daf967db1e1893ed3ebd67575ed82d3902563e3191ca92aaec9164fbdef9
+          SPARKLE_VERSION: 2.9.4
+        run: |
+          archive="$RUNNER_TEMP/Sparkle-$SPARKLE_VERSION.tar.xz"
+          tools_dir="$RUNNER_TEMP/sparkle-tools"
+
+          curl \
+            --fail \
+            --location \
+            --proto '=https' \
+            --tlsv1.2 \
+            --output "$archive" \
+            "https://github.com/sparkle-project/Sparkle/releases/download/$SPARKLE_VERSION/Sparkle-$SPARKLE_VERSION.tar.xz"
+          printf '%s  %s\n' "$SPARKLE_ARCHIVE_SHA256" "$archive" | shasum --algorithm 256 --check
+          mkdir -p "$tools_dir"
+          tar -xJf "$archive" -C "$tools_dir" ./bin/generate_appcast
+          chmod 700 "$tools_dir/bin/generate_appcast"
+
+      - name: Generate signed update feed
+        env:
+          SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+        run: |
+          if [ -z "$SPARKLE_PRIVATE_KEY" ]; then
+            echo "SPARKLE_PRIVATE_KEY is not configured." >&2
+            exit 78
+          fi
+
+          release_version=${GITHUB_REF_NAME#v}
+          asset_name="Startle-${release_version}-macOS-unsigned"
+          update_dir=build/update-feed
+          mkdir -p "$update_dir"
+          cp "dist/$asset_name.zip" "$update_dir/"
+
+          printf '%s' "$SPARKLE_PRIVATE_KEY" | \
+            "$RUNNER_TEMP/sparkle-tools/bin/generate_appcast" \
+              --ed-key-file - \
+              --download-url-prefix \
+              "https://github.com/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}/" \
+              "$update_dir"
+
+          test -f "$update_dir/appcast.xml"
+
       - name: Publish prerelease
         env:
           GH_TOKEN: ${{ github.token }}
@@ -103,4 +171,19 @@ jobs:
               --title "Startle $GITHUB_REF_NAME (unsigned)" \
               --notes "$release_notes" \
               --generate-notes
+          fi
+
+      - name: Publish update feed
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view appcast >/dev/null 2>&1; then
+            gh release upload appcast build/update-feed/appcast.xml --clobber
+          else
+            gh release create \
+              appcast \
+              build/update-feed/appcast.xml \
+              --prerelease \
+              --title "Startle update feed" \
+              --notes "Machine-readable update feed used by Startle."
           fi

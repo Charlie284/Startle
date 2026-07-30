@@ -5,7 +5,7 @@ Contributions are welcome. Safety-sensitive behavior needs especially careful re
 ## Before opening a change
 
 - Search existing issues and pull requests.
-- Keep changes focused and preserve the public-framework-only approach.
+- Keep changes focused, use public Apple APIs, and preserve the existing Sparkle update path.
 - Do not add bundled copyrighted video, telemetry, private APIs, or behavior that bypasses the user's active window or safety settings.
 - For a security vulnerability, follow [SECURITY.md](SECURITY.md) instead of opening a public report.
 
