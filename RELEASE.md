@@ -8,6 +8,8 @@ Pushing a version tag such as `v1.0.1` runs `.github/workflows/release.yml`. The
 
 Unsigned previews are intended for development and evaluation. Gatekeeper will identify them as coming from an unidentified developer, and they do not satisfy the production release process below.
 
+The release workflow builds and tests without signing-key access. A separate job protected by the `release` environment signs the ZIP with Sparkle's Ed25519 key, uploads the versioned assets, and then replaces the fixed `appcast` release asset consumed by installed copies of Startle. The private key must exist only in that environment's `SPARKLE_PRIVATE_KEY` secret and the release operator's Keychain; never commit or print it.
+
 ## 1. Prepare the version
 
 1. Start from a clean default branch with passing CI.
@@ -71,6 +73,7 @@ Exercise the final signed artifact on a clean account on macOS 14 and the curren
 - full-screen, centered, current-display, and all-display modes
 - cursor and previous-application restoration after completion, failure, and dismissal
 - launch-at-login enablement and the “Never run at login” override
+- automatic and manual update checks, download verification, installation, and relaunch from the previous release
 - recovery from corrupt settings and video-library files
 
 ## 5. Publish

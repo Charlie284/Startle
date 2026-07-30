@@ -12,6 +12,7 @@ final class AppState {
   let scheduler: ScareScheduler
   let coordinator: ScareCoordinator
   let launchAtLogin: LaunchAtLoginManager
+  let softwareUpdater: SoftwareUpdater
   private var emergencyShortcut: EmergencyShortcutManager!
 
   init() {
@@ -24,6 +25,7 @@ final class AppState {
     scheduler = ScareScheduler(settings: settings, activity: activity)
     coordinator = ScareCoordinator(settings: settings, library: library)
     launchAtLogin = LaunchAtLoginManager()
+    softwareUpdater = SoftwareUpdater()
     emergencyShortcut = EmergencyShortcutManager { [weak self] in self?.emergencyDisable() }
     scheduler.onTrigger = { [weak self] in await self?.coordinator.trigger() }
     library.onEnabledVideosChanged = { [weak self] hasVideos in

@@ -53,6 +53,8 @@ extension Color {
 }
 
 struct AboutView: View {
+  @Environment(AppState.self) private var state
+
   private var version: String {
     Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String
       ?? "Development"
@@ -71,6 +73,8 @@ struct AboutView: View {
         Text(
           "Startle never uploads your videos. Imported files remain where you put them and are reopened through security-scoped bookmarks."
         ).multilineTextAlignment(.center).frame(maxWidth: 520)
+        Button("Check for Updates…") { state.softwareUpdater.checkForUpdates() }
+          .disabled(!state.softwareUpdater.canCheckForUpdates)
       }.frame(maxWidth: .infinity).padding(.vertical, 40)
     }
   }

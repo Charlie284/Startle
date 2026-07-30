@@ -47,6 +47,16 @@ if [ "$(/usr/libexec/PlistBuddy -c 'Print :com.apple.security.files.user-selecte
     exit 70
 fi
 
+if [ "$(/usr/libexec/PlistBuddy -c 'Print :com.apple.security.temporary-exception.mach-lookup.global-name:0' "$entitlements_path")" != "com.startle.app-spks" ]; then
+    echo "The app signature does not allow communication with Sparkle's status service." >&2
+    exit 70
+fi
+
+if [ "$(/usr/libexec/PlistBuddy -c 'Print :com.apple.security.temporary-exception.mach-lookup.global-name:1' "$entitlements_path")" != "com.startle.app-spki" ]; then
+    echo "The app signature does not allow communication with Sparkle's installer service." >&2
+    exit 70
+fi
+
 echo "Checking Gatekeeper acceptance"
 spctl --assess --type execute --verbose=2 "$app_path"
 

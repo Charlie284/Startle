@@ -30,6 +30,7 @@
 		B2000000000000000000000A /* SafetyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2000000000000000000000A /* SafetyView.swift */; };
 		B2000000000000000000000B /* AppearanceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2000000000000000000000B /* AppearanceView.swift */; };
 		B2000000000000000000000C /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2000000000000000000000C /* OnboardingView.swift */; };
+		B2000000000000000000000D /* SoftwareUpdater.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2000000000000000000000D /* SoftwareUpdater.swift */; };
 		B30000000000000000000001 /* ScheduleEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F30000000000000000000001 /* ScheduleEngineTests.swift */; };
 		B30000000000000000000002 /* SettingsStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F30000000000000000000002 /* SettingsStoreTests.swift */; };
 		B30000000000000000000003 /* VideoLibraryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F30000000000000000000003 /* VideoLibraryTests.swift */; };
@@ -37,6 +38,7 @@
 		B40000000000000000000001 /* StartleCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = P10000000000000000000002 /* StartleCore.framework */; };
 		B40000000000000000000002 /* StartleCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = P10000000000000000000002 /* StartleCore.framework */; };
 		B40000000000000000000003 /* StartleCore.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = P10000000000000000000002 /* StartleCore.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		B50000000000000000000001 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = Q50000000000000000000001 /* Sparkle */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -94,6 +96,7 @@
 		F2000000000000000000000A /* SafetyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafetyView.swift; sourceTree = "<group>"; };
 		F2000000000000000000000B /* AppearanceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppearanceView.swift; sourceTree = "<group>"; };
 		F2000000000000000000000C /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
+		F2000000000000000000000D /* SoftwareUpdater.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoftwareUpdater.swift; sourceTree = "<group>"; };
 		F30000000000000000000001 /* ScheduleEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleEngineTests.swift; sourceTree = "<group>"; };
 		F30000000000000000000002 /* SettingsStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsStoreTests.swift; sourceTree = "<group>"; };
 		F30000000000000000000003 /* VideoLibraryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoLibraryTests.swift; sourceTree = "<group>"; };
@@ -111,6 +114,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				B40000000000000000000001 /* StartleCore.framework in Frameworks */,
+				B50000000000000000000001 /* Sparkle in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -173,6 +177,7 @@
 				F2000000000000000000000A /* SafetyView.swift */,
 				F2000000000000000000000B /* AppearanceView.swift */,
 				F2000000000000000000000C /* OnboardingView.swift */,
+				F2000000000000000000000D /* SoftwareUpdater.swift */,
 				G10000000000000000000007 /* Resources */,
 			);
 			path = Sources/StartleApp;
@@ -236,6 +241,9 @@
 				D10000000000000000000001 /* PBXTargetDependency */,
 			);
 			name = Startle;
+			packageProductDependencies = (
+				Q50000000000000000000001 /* Sparkle */,
+			);
 			productName = Startle;
 			productReference = P10000000000000000000001 /* Startle.app */;
 			productType = "com.apple.product-type.application";
@@ -303,6 +311,9 @@
 				Base,
 			);
 			mainGroup = G10000000000000000000001;
+			packageReferences = (
+				X50000000000000000000001 /* XCRemoteSwiftPackageReference "Sparkle" */,
+			);
 			productRefGroup = G10000000000000000000006 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -341,6 +352,7 @@
 				B2000000000000000000000A /* SafetyView.swift in Sources */,
 				B2000000000000000000000B /* AppearanceView.swift in Sources */,
 				B2000000000000000000000C /* OnboardingView.swift in Sources */,
+				B2000000000000000000000D /* SoftwareUpdater.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -563,6 +575,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		X50000000000000000000001 /* XCRemoteSwiftPackageReference "Sparkle" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sparkle-project/Sparkle";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.9.4;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		Q50000000000000000000001 /* Sparkle */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = X50000000000000000000001 /* XCRemoteSwiftPackageReference "Sparkle" */;
+			productName = Sparkle;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = A10000000000000000000001 /* Project object */;
 }

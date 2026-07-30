@@ -14,7 +14,13 @@ struct StartleApp: App {
         .frame(minWidth: 880, minHeight: 540)
     }
     .defaultSize(width: 1050, height: 610)
-    .commands { CommandGroup(replacing: .newItem) {} }
+    .commands {
+      CommandGroup(replacing: .newItem) {}
+      CommandGroup(after: .appInfo) {
+        Button("Check for Updates…") { state.softwareUpdater.checkForUpdates() }
+          .disabled(!state.softwareUpdater.canCheckForUpdates)
+      }
+    }
 
     MenuBarExtra {
       MenuBarContent()
@@ -64,6 +70,8 @@ private struct MenuBarContent: View {
       openWindow(id: "main")
       NSApp.activate()
     }
+    Button("Check for Updates…") { state.softwareUpdater.checkForUpdates() }
+      .disabled(!state.softwareUpdater.canCheckForUpdates)
     Button("Quit Startle") { NSApplication.shared.terminate(nil) }
       .keyboardShortcut("q")
   }

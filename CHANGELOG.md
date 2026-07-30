@@ -4,6 +4,11 @@ All notable changes will be documented here. The project follows [Semantic Versi
 
 ## Unreleased
 
+### Added
+
+- Secure in-app update checks, downloads, installation, and relaunch through Sparkle.
+- Check-for-updates actions in the app menu, menu-bar menu, and About screen.
+
 ## 1.0.4 - 2026-07-30
 
 ### Fixed
