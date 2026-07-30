@@ -20,10 +20,22 @@ struct StartleApp: App {
       MenuBarContent()
         .environment(state)
     } label: {
-      Image("StartleMenuBarIcon")
+      Image(nsImage: Self.menuBarIcon)
         .renderingMode(.template)
+        .foregroundStyle(.primary)
+        .accessibilityLabel("Startle")
     }
   }
+
+  private static let menuBarIcon: NSImage = {
+    let image =
+      NSImage(named: "StartleMenuBarIcon")
+      ?? NSImage(systemSymbolName: "eye.fill", accessibilityDescription: "Startle")
+      ?? NSImage(size: NSSize(width: 18, height: 18))
+    image.isTemplate = true
+    image.size = NSSize(width: 18, height: 18)
+    return image
+  }()
 
   private var colorScheme: ColorScheme? {
     switch state.settings.values.appearance.theme {

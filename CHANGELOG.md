@@ -4,6 +4,12 @@ All notable changes will be documented here. The project follows [Semantic Versi
 
 ## Unreleased
 
+## 1.0.4 - 2026-07-30
+
+### Fixed
+
+- The custom menu bar icon is now loaded as an AppKit template image so macOS always applies the correct status-bar tint.
+
 ## 1.0.3 - 2026-07-30
 
 ### Changed
