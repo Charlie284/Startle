@@ -62,16 +62,19 @@ jobs:
 
       - name: Package unsigned app
         run: |
-          mkdir -p build/artifacts
-          ditto \
-            -c -k --sequesterRsrc --keepParent \
+          ./Scripts/package-unsigned-release.sh \
             build/DerivedData/Build/Products/Release/Startle.app \
-            build/artifacts/Startle-macOS-unsigned.zip
+            build/artifacts \
+            Startle-macOS-unsigned
 
       - name: Upload unsigned app
         uses: actions/upload-artifact@v7
         with:
           name: Startle-${{ github.sha }}-macOS-unsigned
-          path: build/artifacts/Startle-macOS-unsigned.zip
+          path: |
+            build/artifacts/Startle-macOS-unsigned.dmg
+            build/artifacts/Startle-macOS-unsigned.dmg.sha256
+            build/artifacts/Startle-macOS-unsigned.zip
+            build/artifacts/Startle-macOS-unsigned.zip.sha256
           if-no-files-found: error
           retention-days: 14

@@ -42,9 +42,11 @@ The Xcode target enables App Sandbox and Hardened Runtime. Distribution still re
 
 ## Preview downloads
 
-Version tags matching `v*` build a universal macOS app and publish it as a GitHub prerelease with a SHA-256 checksum. These downloads are unsigned because the project does not currently use a paid Apple Developer identity.
+Version tags matching `v*` build a universal macOS app and publish it as a GitHub prerelease. The DMG is the recommended download; a ZIP is also available as a fallback. Each asset has a SHA-256 checksum. These downloads are unsigned because the project does not currently use a paid Apple Developer identity.
 
-macOS will identify an unsigned download as coming from an unidentified developer. After verifying the checksum, extract the ZIP and use **Control-click → Open** for the first launch. Do not treat an unsigned preview as equivalent to a Developer ID-signed and notarized release.
+[Download an unsigned preview](https://github.com/Charlie284/Startle/releases)
+
+After verifying the checksum, open the DMG and drag **Startle** to the **Applications** shortcut. macOS will identify the app as coming from an unidentified developer, so use **Control-click → Open** in Applications for the first launch. Do not treat an unsigned preview as equivalent to a Developer ID-signed and notarized release.
 
 ## Architecture
 
