@@ -24,8 +24,10 @@ esac
 
 mkdir -p "$output_dir"
 output_dir=$(CDPATH= cd "$output_dir" && pwd)
-archive_path="$output_dir/$asset_name.zip"
-dmg_path="$output_dir/$asset_name.dmg"
+archive_name="$asset_name.zip"
+dmg_name="$asset_name.dmg"
+archive_path="$output_dir/$archive_name"
+dmg_path="$output_dir/$dmg_name"
 staging_root=$(mktemp -d "${TMPDIR:-/tmp}/startle-release.XXXXXX")
 staging_dir="$staging_root/Startle"
 
@@ -46,9 +48,11 @@ hdiutil create \
     -format UDZO \
     "$dmg_path"
 
-for asset_path in "$archive_path" "$dmg_path"; do
-    shasum -a 256 "$asset_path" > "$asset_path.sha256"
-done
+(
+    cd "$output_dir"
+    shasum -a 256 "$archive_name" > "$archive_name.sha256"
+    shasum -a 256 "$dmg_name" > "$dmg_name.sha256"
+)
 
 echo "Packaged $archive_path"
 echo "Packaged $dmg_path"
