@@ -4,6 +4,12 @@ All notable changes will be documented here. The project follows [Semantic Versi
 
 ## Unreleased
 
+## 1.0.1 - 2026-07-29
+
+### Added
+
+- Compressed DMG release downloads with an Applications shortcut.
+
 ## 1.0.0 - 2026-07-29
 
 ### Added

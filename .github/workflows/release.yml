@@ -70,34 +70,34 @@ jobs:
       - name: Package release assets
         run: |
           release_version=${GITHUB_REF_NAME#v}
-          archive_name="Startle-${release_version}-macOS-unsigned.zip"
-          mkdir -p dist
-          ditto \
-            -c -k --sequesterRsrc --keepParent \
+          ./Scripts/package-unsigned-release.sh \
             build/DerivedData/Build/Products/Release/Startle.app \
-            "dist/$archive_name"
-          cd dist
-          shasum -a 256 "$archive_name" > "$archive_name.sha256"
+            dist \
+            "Startle-${release_version}-macOS-unsigned"
 
       - name: Publish prerelease
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           release_version=${GITHUB_REF_NAME#v}
-          archive_name="Startle-${release_version}-macOS-unsigned.zip"
-          release_notes="Unsigned preview build. macOS will identify this app as coming from an unidentified developer. Review the installation notes in the repository before opening it."
+          asset_name="Startle-${release_version}-macOS-unsigned"
+          release_notes="Unsigned preview build. Download the DMG, drag Startle to Applications, then review the first-launch instructions in the repository. macOS will identify this app as coming from an unidentified developer."
 
           if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
             gh release upload \
               "$GITHUB_REF_NAME" \
-              "dist/$archive_name" \
-              "dist/$archive_name.sha256" \
+              "dist/$asset_name.dmg" \
+              "dist/$asset_name.dmg.sha256" \
+              "dist/$asset_name.zip" \
+              "dist/$asset_name.zip.sha256" \
               --clobber
           else
             gh release create \
               "$GITHUB_REF_NAME" \
-              "dist/$archive_name" \
-              "dist/$archive_name.sha256" \
+              "dist/$asset_name.dmg" \
+              "dist/$asset_name.dmg.sha256" \
+              "dist/$asset_name.zip" \
+              "dist/$asset_name.zip.sha256" \
               --verify-tag \
               --prerelease \
               --title "Startle $GITHUB_REF_NAME (unsigned)" \

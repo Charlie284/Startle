@@ -4,7 +4,7 @@ Startle is not ready to distribute merely because `swift test` passes. A release
 
 ## Unsigned preview releases
 
-Pushing a version tag such as `v1.0.0` runs `.github/workflows/release.yml`. The workflow repeats the source and Xcode tests, builds a universal macOS app, verifies the unsigned bundle, and publishes a prerelease ZIP with its SHA-256 checksum.
+Pushing a version tag such as `v1.0.1` runs `.github/workflows/release.yml`. The workflow repeats the source and Xcode tests, builds a universal macOS app, verifies the unsigned bundle, and publishes a compressed DMG and fallback ZIP with SHA-256 checksums. The DMG contains the app and an Applications shortcut.
 
 Unsigned previews are intended for development and evaluation. Gatekeeper will identify them as coming from an unidentified developer, and they do not satisfy the production release process below.
 
