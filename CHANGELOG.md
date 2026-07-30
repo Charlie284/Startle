@@ -4,8 +4,11 @@ All notable changes will be documented here. The project follows [Semantic Versi
 
 ## Unreleased
 
+## 1.0.0 - 2026-07-29
+
 ### Added
 
+- Tag-driven unsigned macOS prereleases with SHA-256 checksums.
 - Release-mode CI for the Swift package and Xcode project.
 - Settings migration and corrupt-data recovery coverage.
 - Privacy, security, contribution, safety, and release documentation.
