@@ -1,5 +1,9 @@
 .build/
 DerivedData/
+build/
+*.xcarchive
+*.dmg
+*.pkg
 *.xcuserstate
 xcuserdata/
 .DS_Store

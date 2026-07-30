@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-labelledby="title description">
+  <title id="title">Startle app icon</title>
+  <desc id="description">A minimal coral jumpscare face with uneven eyes and an open mouth on a charcoal square.</desc>
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#222328"/>
+      <stop offset="1" stop-color="#121317"/>
+    </linearGradient>
+    <linearGradient id="face" x1="0.18" y1="0.08" x2="0.74" y2="0.92">
+      <stop offset="0" stop-color="#ff6842"/>
+      <stop offset="1" stop-color="#f04420"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Keep the source square. The operating system applies its own icon mask. -->
+  <rect width="1024" height="1024" fill="url(#background)"/>
+
+  <!-- The oversized crop makes the face feel as if it appeared too close to the screen. -->
+  <ellipse cx="512" cy="598" rx="548" ry="594" fill="url(#face)"/>
+
+  <ellipse cx="322" cy="332" rx="170" ry="218" transform="rotate(13 322 332)" fill="#fff4dc"/>
+  <circle cx="334" cy="337" r="34" fill="#15161a"/>
+
+  <ellipse cx="806" cy="396" rx="132" ry="163" transform="rotate(-10 806 396)" fill="#fff4dc"/>
+  <circle cx="796" cy="405" r="29" fill="#15161a"/>
+
+  <ellipse cx="554" cy="836" rx="218" ry="342" transform="rotate(4 554 836)" fill="#101115"/>
+</svg>

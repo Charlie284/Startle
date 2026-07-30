@@ -1,0 +1,50 @@
+name: Bug report
+description: Report a reproducible problem in Startle
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not disclose security-sensitive details here. Follow SECURITY.md for sandbox, file-access, or emergency-control vulnerabilities.
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What happened, and what did you expect instead?
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Startle version or commit
+    validations:
+      required: true
+  - type: input
+    id: macos
+    attributes:
+      label: macOS version
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Reproduction steps
+      description: Remove personal paths, bookmark data, and private media details.
+    validations:
+      required: true
+  - type: dropdown
+    id: safety
+    attributes:
+      label: Did this affect a safety control or emergency dismissal?
+      options:
+        - "No"
+        - "Yes"
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs
+      render: shell
