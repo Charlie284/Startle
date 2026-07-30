@@ -4,6 +4,12 @@ All notable changes will be documented here. The project follows [Semantic Versi
 
 ## Unreleased
 
+## 1.0.2 - 2026-07-30
+
+### Fixed
+
+- Release checksums now use portable asset filenames.
+
 ## 1.0.1 - 2026-07-29
 
 ### Added
