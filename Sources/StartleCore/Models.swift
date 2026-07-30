@@ -17,18 +17,6 @@ public enum AppTheme: String, Codable, CaseIterable, Sendable {
   public var title: String { rawValue.capitalized }
 }
 
-public enum MenuBarIconStyle: String, Codable, CaseIterable, Sendable {
-  case eye, warning, ghost
-  public var title: String { rawValue.capitalized }
-  public var symbolName: String {
-    switch self {
-    case .eye: "eye.fill"
-    case .warning: "exclamationmark.triangle.fill"
-    case .ghost: "theatermasks.fill"
-    }
-  }
-}
-
 public enum ScareDisplayMode: String, Codable, CaseIterable, Sendable {
   case fullScreen, centered, currentDisplay, allDisplays
   public var title: String {
@@ -135,7 +123,6 @@ public struct SafetySettings: Codable, Equatable, Sendable {
 
 public struct AppearanceSettings: Codable, Equatable, Sendable {
   public var theme: AppTheme = .system
-  public var menuBarIcon: MenuBarIconStyle = .eye
   public var displayMode: ScareDisplayMode = .fullScreen
   public var backgroundHex = "09090B"
   public var hideCursor = true
@@ -147,8 +134,6 @@ public struct AppearanceSettings: Codable, Equatable, Sendable {
     self.init()
     let container = try decoder.container(keyedBy: CodingKeys.self)
     theme = try container.decodeIfPresent(AppTheme.self, forKey: .theme) ?? theme
-    menuBarIcon =
-      try container.decodeIfPresent(MenuBarIconStyle.self, forKey: .menuBarIcon) ?? menuBarIcon
     displayMode =
       try container.decodeIfPresent(ScareDisplayMode.self, forKey: .displayMode) ?? displayMode
     backgroundHex =

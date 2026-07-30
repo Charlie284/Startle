@@ -4,6 +4,12 @@ All notable changes will be documented here. The project follows [Semantic Versi
 
 ## Unreleased
 
+## 1.0.3 - 2026-07-30
+
+### Changed
+
+- The menu bar now uses a custom monochrome Startle face that adapts to light and dark appearances.
+
 ## 1.0.2 - 2026-07-30
 
 ### Fixed

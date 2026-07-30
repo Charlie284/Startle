@@ -20,7 +20,8 @@ struct StartleApp: App {
       MenuBarContent()
         .environment(state)
     } label: {
-      Image(systemName: state.settings.values.appearance.menuBarIcon.symbolName)
+      Image("StartleMenuBarIcon")
+        .renderingMode(.template)
     }
   }
 

@@ -12,11 +12,6 @@ struct AppearanceView: View {
           Picker("Theme", selection: $store.values.appearance.theme) {
             ForEach(AppTheme.allCases, id: \.self) { Text($0.title).tag($0) }
           }.pickerStyle(.segmented)
-          Picker("Menu bar icon", selection: $store.values.appearance.menuBarIcon) {
-            ForEach(MenuBarIconStyle.allCases, id: \.self) {
-              Label($0.title, systemImage: $0.symbolName).tag($0)
-            }
-          }.frame(maxWidth: 360)
         }.padding(8)
       }
       GroupBox("Scare display") {

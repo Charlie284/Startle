@@ -9,7 +9,7 @@ import XCTest
 final class SettingsStoreTests: XCTestCase {
   func testOlderSettingsPayloadUsesCurrentDefaultsForMissingFields() throws {
     let data = Data(
-      #"{"scaresEnabled":true,"onboardingCompleted":true,"schedule":{"mode":"fixedInterval","fixedInterval":900}}"#
+      #"{"scaresEnabled":true,"onboardingCompleted":true,"schedule":{"mode":"fixedInterval","fixedInterval":900},"appearance":{"menuBarIcon":"ghost"}}"#
         .utf8)
 
     let settings = try JSONDecoder().decode(PersistedSettings.self, from: data)
