@@ -84,6 +84,13 @@ public final class ScareWindowController {
       presentationID = nil
       throw StartleError.playbackFailed("The selected movie is not playable.")
     }
+    guard
+      !safety.excludesApplication(
+        bundleIdentifier: NSWorkspace.shared.frontmostApplication?.bundleIdentifier)
+    else {
+      presentationID = nil
+      return false
+    }
     guard let fallbackScreen = NSScreen.main ?? NSScreen.screens.first else {
       presentationID = nil
       throw StartleError.playbackFailed("No active display is available.")

@@ -1,3 +1,4 @@
+import AppKit
 import StartleCore
 import SwiftUI
 
@@ -57,6 +58,46 @@ struct SafetyView: View {
         }.padding(8)
       }
 
+      GroupBox("Excluded apps") {
+        VStack(alignment: .leading, spacing: 12) {
+          Text(
+            "Startle checks the frontmost app immediately before firing and stays inactive for every app in this list. This is local and doesn't require Accessibility permission."
+          )
+          .font(.callout)
+          .foregroundStyle(.secondary)
+
+          if store.values.safety.excludedApplications.isEmpty {
+            ContentUnavailableView(
+              "No Excluded Apps", systemImage: "app.badge",
+              description: Text("Add presentation, recording, game, or editing apps here.")
+            )
+            .frame(maxWidth: .infinity)
+          } else {
+            ForEach(store.values.safety.excludedApplications) { application in
+              HStack(spacing: 10) {
+                ExcludedApplicationIcon(bundleIdentifier: application.bundleIdentifier)
+                VStack(alignment: .leading, spacing: 2) {
+                  Text(application.displayName)
+                  Text(application.bundleIdentifier)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .textSelection(.enabled)
+                }
+                Spacer()
+                Button("Remove", systemImage: "trash", role: .destructive) {
+                  state.removeExcludedApplication(application)
+                }
+                .labelStyle(.iconOnly)
+                .help("Remove \(application.displayName) from exclusions")
+              }
+              .padding(.vertical, 2)
+            }
+          }
+
+          Button("Add App…", systemImage: "plus") { state.chooseExcludedApplication() }
+        }.padding(8)
+      }
+
       GroupBox("Environment limits") {
         VStack(alignment: .leading, spacing: 14) {
           Toggle(
@@ -102,6 +143,24 @@ struct SafetyView: View {
           .disabled(store.values.safety.neverRunAtLogin)
         }.padding(8)
       }
+    }
+  }
+}
+
+private struct ExcludedApplicationIcon: View {
+  let bundleIdentifier: String
+
+  var body: some View {
+    if let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleIdentifier) {
+      Image(nsImage: NSWorkspace.shared.icon(forFile: url.path))
+        .resizable()
+        .frame(width: 32, height: 32)
+        .accessibilityHidden(true)
+    } else {
+      Image(systemName: "app")
+        .font(.title2)
+        .frame(width: 32, height: 32)
+        .accessibilityHidden(true)
     }
   }
 }

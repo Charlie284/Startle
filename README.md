@@ -57,7 +57,7 @@ Once installed, Startle checks for updates through Sparkle. You can also choose 
 - `ScheduleEngine` is a pure, deterministic scheduling policy layer. It handles random/fixed/chance modes, active windows, overnight ranges, cooldowns, and daily limits.
 - `ScareScheduler` owns exactly one cancellable Swift-concurrency timer and always generates a new future schedule after wake.
 - `SystemActivityMonitor` watches public sleep/session, camera and microphone device-running state, Apple capture-app activity, full-screen window, display, battery, volume, and idle signals. macOS provides no supported global Focus-state API, and third-party sharing is not always detectable; Startle reports those limitations and does not use private APIs.
-- `ScareCoordinator` prevents overlapping scares, selects media, owns security-scope lifetime, records successful scheduled scares, and routes errors.
+- `ScareCoordinator` prevents overlapping scares, checks the current app exclusion list immediately before presentation, selects media, owns security-scope lifetime, records successful scheduled scares, and routes errors.
 - `ScareWindowController` preloads AVFoundation media, creates borderless high-level AppKit windows, supports every display mode, maintains aspect ratio or crop-to-fill, captures Escape, restores the cursor and previous app, and removes all observers/resources.
 - `EmergencyShortcutManager` registers **Command–Option–Shift–Escape** as a system hot key using the public Carbon hot-key API. Scheduled scares fail closed until that registration succeeds.
 - `LaunchAtLoginManager` wraps `SMAppService.mainApp` and respects “Never run at login.”
@@ -70,7 +70,7 @@ Only one scheduling task exists at a time. Disabling scares cancels it. Preferen
 
 ## Privacy and permissions
 
-Startle is sandboxed. The file picker grants read-only access only to videos selected by the user; bookmarks preserve that access across launches. Videos are never copied or uploaded. Device-running, Apple screen-capture app, display, battery, output-volume, and window checks use public system APIs. Focus status is unavailable through public macOS APIs, and third-party sharing detection is best-effort.
+Startle is sandboxed. The file picker grants read-only access only to videos selected by the user; bookmarks preserve that access across launches. Videos are never copied or uploaded. Device-running, Apple screen-capture app, display, battery, output-volume, window, and frontmost-app checks use public system APIs. App exclusions are stored locally by bundle identifier and use `NSWorkspace` without Accessibility permission. Focus status is unavailable through public macOS APIs, and third-party sharing detection is best-effort.
 
 Startle contains no analytics, advertising SDKs, or telemetry. Its only network use is checking for and downloading signed releases from GitHub through Sparkle. Its privacy manifest declares no tracking or collected data. Local file paths and security-scoped bookmark data remain on the Mac.
 

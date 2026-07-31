@@ -6,6 +6,7 @@ All notable changes will be documented here. The project follows [Semantic Versi
 
 ### Added
 
+- A local per-app exclusion list that blocks scares while a selected app is frontmost, without requiring Accessibility permission.
 - Secure in-app update checks, downloads, installation, and relaunch through Sparkle.
 - Check-for-updates actions in the app menu, menu-bar menu, and About screen.
 

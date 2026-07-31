@@ -12,6 +12,8 @@ Do not use Startle around anyone with a heart condition, epilepsy, severe anxiet
 
 ## Limits of automatic detection
 
+Add presentation, recording, game, and editing apps to the exclusion list in Safety. Startle checks the frontmost app through the public `NSWorkspace` API immediately before presentation and does not require Accessibility permission for this check.
+
 Camera, microphone, full-screen window, Apple screen-capture, display, battery, volume, idle, sleep, and session checks rely on public macOS signals. Those signals can be unavailable or incomplete. Third-party screen sharing may not be detected. macOS does not provide a supported API for reading Focus or Do Not Disturb state.
 
 These checks reduce risk but do not replace consent, supervision, or judgment. Startle is not a medical or safety device.

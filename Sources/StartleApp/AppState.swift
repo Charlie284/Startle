@@ -98,6 +98,29 @@ final class AppState {
     importVideos(panel.urls)
   }
 
+  func chooseExcludedApplication() {
+    let panel = NSOpenPanel()
+    panel.allowsMultipleSelection = false
+    panel.canChooseDirectories = false
+    panel.allowedContentTypes = [.applicationBundle]
+    panel.directoryURL = URL(fileURLWithPath: "/Applications", isDirectory: true)
+    panel.message = "Choose an app where Startle must never fire"
+    panel.prompt = "Exclude App"
+    guard panel.runModal() == .OK, let url = panel.url, let bundle = Bundle(url: url),
+      let bundleIdentifier = bundle.bundleIdentifier
+    else { return }
+    let displayName =
+      bundle.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String
+      ?? bundle.object(forInfoDictionaryKey: "CFBundleName") as? String
+      ?? url.deletingPathExtension().lastPathComponent
+    settings.excludeApplication(
+      ExcludedApplication(bundleIdentifier: bundleIdentifier, displayName: displayName))
+  }
+
+  func removeExcludedApplication(_ application: ExcludedApplication) {
+    settings.removeExcludedApplication(application)
+  }
+
   func chooseReplacement(for item: VideoItem) {
     let panel = NSOpenPanel()
     panel.allowsMultipleSelection = false

@@ -21,6 +21,7 @@ final class SettingsStoreTests: XCTestCase {
     XCTAssertEqual(settings.schedule.maximumScaresPerDay, 5)
     XCTAssertTrue(settings.safety.neverRunAtLogin)
     XCTAssertFalse(settings.safety.pauseForFocus)
+    XCTAssertTrue(settings.safety.excludedApplications.isEmpty)
     XCTAssertEqual(settings.appearance.displayMode, .fullScreen)
   }
 
@@ -29,12 +30,45 @@ final class SettingsStoreTests: XCTestCase {
     original.onboardingCompleted = true
     original.schedule.activeDays = [2, 4, 6]
     original.safety.quietMode = true
+    original.safety.excludedApplications = [
+      ExcludedApplication(bundleIdentifier: "us.zoom.xos", displayName: "zoom.us")
+    ]
     original.appearance.cropToFill = true
 
     let data = try JSONEncoder().encode(original)
     let decoded = try JSONDecoder().decode(PersistedSettings.self, from: data)
 
     XCTAssertEqual(decoded, original)
+  }
+
+  func testExcludedApplicationsMatchBundleIdentifiersCaseInsensitively() {
+    var safety = SafetySettings()
+    safety.excludedApplications = [
+      ExcludedApplication(bundleIdentifier: "com.apple.Keynote", displayName: "Keynote")
+    ]
+
+    XCTAssertTrue(safety.excludesApplication(bundleIdentifier: "com.apple.keynote"))
+    XCTAssertFalse(safety.excludesApplication(bundleIdentifier: "com.apple.FinalCut"))
+    XCTAssertFalse(safety.excludesApplication(bundleIdentifier: nil))
+  }
+
+  func testExcludedApplicationMutationsAvoidDuplicates() {
+    let suiteName = "StartleCoreTests.SettingsStore.\(UUID().uuidString)"
+    let defaults = UserDefaults(suiteName: suiteName)!
+    defer { defaults.removePersistentDomain(forName: suiteName) }
+    let store = SettingsStore(defaults: defaults)
+    let application = ExcludedApplication(
+      bundleIdentifier: "com.obsproject.obs-studio", displayName: "OBS")
+
+    store.excludeApplication(application)
+    store.excludeApplication(
+      ExcludedApplication(bundleIdentifier: "COM.OBSPROJECT.OBS-STUDIO", displayName: "OBS Copy"))
+
+    XCTAssertEqual(store.values.safety.excludedApplications, [application])
+
+    store.removeExcludedApplication(application)
+
+    XCTAssertTrue(store.values.safety.excludedApplications.isEmpty)
   }
 
   func testCorruptSettingsAreBackedUpBeforeReset() {

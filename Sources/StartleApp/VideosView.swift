@@ -33,6 +33,7 @@ struct VideosView: View {
           "No Videos Yet", systemImage: "film",
           description: Text("Import at least one video to enable scares."))
       } else {
+        selectionControls
         libraryToolbar
         videoList
         if let selectedVideo {
@@ -59,6 +60,58 @@ struct VideosView: View {
       Text(
         "This removes missing entries and their saved playback settings. Video files are never deleted."
       )
+    }
+  }
+
+  private var selectionControls: some View {
+    GroupBox("Shuffle") {
+      VStack(alignment: .leading, spacing: 12) {
+        LabeledContent("Mode") {
+          Picker("Shuffle mode", selection: selectionModeBinding) {
+            ForEach(VideoSelectionMode.allCases, id: \.self) { mode in
+              Text(mode.title).tag(mode)
+            }
+          }
+          .labelsHidden()
+          .frame(maxWidth: 280)
+        }
+        Stepper(
+          "Avoid the last \(state.library.selectionSettings.recentHistoryCount) videos",
+          value: recentHistoryBinding, in: 3...5)
+        Text(selectionModeDescription)
+          .font(.caption)
+          .foregroundStyle(.secondary)
+      }
+      .padding(8)
+    }
+  }
+
+  private var selectionModeBinding: Binding<VideoSelectionMode> {
+    Binding(
+      get: { state.library.selectionSettings.mode },
+      set: { mode in
+        var settings = state.library.selectionSettings
+        settings.mode = mode
+        state.library.updateSelectionSettings(settings)
+      })
+  }
+
+  private var recentHistoryBinding: Binding<Int> {
+    Binding(
+      get: { state.library.selectionSettings.recentHistoryCount },
+      set: { count in
+        var settings = state.library.selectionSettings
+        settings.recentHistoryCount = count
+        state.library.updateSelectionSettings(settings)
+      })
+  }
+
+  private var selectionModeDescription: String {
+    switch state.library.selectionSettings.mode {
+    case .weightedRandom:
+      "Frequency, rare-video probability, cooldowns, and recent history shape each selection."
+    case .shuffleBag:
+      "Every enabled video plays once per cycle. Cooldowns and recent history still apply; frequency and rare settings do not."
     }
   }
 
@@ -323,6 +376,37 @@ private struct VideoInspector: View {
                 .frame(width: 42, alignment: .trailing)
             }
             .frame(maxWidth: 360)
+          }
+          LabeledContent("Frequency weight") {
+            HStack {
+              Slider(value: binding(\.selectionWeight), in: 0.1...10, step: 0.1) {
+                Text("Selection frequency weight")
+              }
+              .labelsHidden()
+              .accessibilityLabel("Selection frequency weight")
+              Text(item.selectionWeight.formatted(.number.precision(.fractionLength(1))))
+                .monospacedDigit()
+                .frame(width: 40, alignment: .trailing)
+            }
+            .frame(maxWidth: 360)
+          }
+          LabeledContent("Rare") {
+            Toggle("Play this video rarely", isOn: binding(\.isRare))
+              .toggleStyle(.switch)
+              .help("Rare videos receive 10% of their configured frequency weight.")
+          }
+          LabeledContent("Video cooldown") {
+            Picker("Video cooldown", selection: binding(\.selectionCooldown)) {
+              Text("None").tag(TimeInterval(0))
+              Text("30 min").tag(TimeInterval(30 * 60))
+              Text("1 hr").tag(TimeInterval(60 * 60))
+              Text("2 hr").tag(TimeInterval(2 * 60 * 60))
+              Text("4 hr").tag(TimeInterval(4 * 60 * 60))
+              Text("8 hr").tag(TimeInterval(8 * 60 * 60))
+              Text("24 hr").tag(TimeInterval(24 * 60 * 60))
+            }
+            .labelsHidden()
+            .frame(maxWidth: 220)
           }
           LabeledContent("Trim") {
             HStack(spacing: 8) {

@@ -48,6 +48,19 @@ public final class SettingsStore {
     values.pauseUntil = Date().addingTimeInterval(interval)
   }
 
+  public func excludeApplication(_ application: ExcludedApplication) {
+    guard !values.safety.excludesApplication(bundleIdentifier: application.bundleIdentifier) else {
+      return
+    }
+    values.safety.excludedApplications.append(application)
+  }
+
+  public func removeExcludedApplication(_ application: ExcludedApplication) {
+    values.safety.excludedApplications.removeAll {
+      $0.bundleIdentifier.caseInsensitiveCompare(application.bundleIdentifier) == .orderedSame
+    }
+  }
+
   public func recordScare(at date: Date = Date()) {
     values.totalScareCount += 1
     values.lastScareDate = date

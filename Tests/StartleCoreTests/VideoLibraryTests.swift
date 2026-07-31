@@ -133,6 +133,155 @@ final class VideoLibraryTests: XCTestCase {
     XCTAssertEqual(item.effectivePlaybackDuration, 0.01, accuracy: 0.0001)
   }
 
+  func testLegacyLibraryLoadsSelectionDefaultsAndMigratesOnSave() throws {
+    let directory = temporaryDirectory()
+    defer { try? FileManager.default.removeItem(at: directory) }
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    let item = try availableItem(named: "Legacy", in: directory)
+    let encoded = try JSONEncoder().encode([item])
+    var payload = try XCTUnwrap(JSONSerialization.jsonObject(with: encoded) as? [[String: Any]])
+    payload[0].removeValue(forKey: "selectionWeight")
+    payload[0].removeValue(forKey: "isRare")
+    payload[0].removeValue(forKey: "selectionCooldown")
+    payload[0].removeValue(forKey: "lastPlayedAt")
+    let storageURL = directory.appendingPathComponent("VideoLibrary.json")
+    try JSONSerialization.data(withJSONObject: payload).write(to: storageURL)
+    let library = VideoLibrary(storageURL: storageURL)
+
+    let loaded = try XCTUnwrap(library.videos.first)
+    XCTAssertEqual(loaded.selectionWeight, 1)
+    XCTAssertFalse(loaded.isRare)
+    XCTAssertEqual(loaded.selectionCooldown, 0)
+    XCTAssertNil(loaded.lastPlayedAt)
+    XCTAssertEqual(library.selectionSettings, VideoSelectionSettings())
+
+    library.updateSelectionSettings(
+      VideoSelectionSettings(mode: .shuffleBag, recentHistoryCount: 5))
+    let reloaded = VideoLibrary(storageURL: storageURL)
+
+    XCTAssertEqual(reloaded.videos.map(\.id), [item.id])
+    XCTAssertEqual(reloaded.selectionSettings.mode, .shuffleBag)
+    XCTAssertEqual(reloaded.selectionSettings.recentHistoryCount, 5)
+  }
+
+  func testWeightedSelectionUsesPerVideoWeightAndRareMultiplier() throws {
+    let directory = temporaryDirectory()
+    defer { try? FileManager.default.removeItem(at: directory) }
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    let light = try availableItem(named: "Light", in: directory, selectionWeight: 1)
+    let heavy = try availableItem(named: "Heavy", in: directory, selectionWeight: 9)
+    let storageURL = directory.appendingPathComponent("VideoLibrary.json")
+    try write([light, heavy], to: storageURL)
+    let selectsLight = VideoLibrary(storageURL: storageURL, randomValue: { 0.05 })
+    let selectsHeavy = VideoLibrary(storageURL: storageURL, randomValue: { 0.2 })
+
+    XCTAssertEqual(selectsLight.randomEnabledVideo()?.id, light.id)
+    XCTAssertEqual(selectsHeavy.randomEnabledVideo()?.id, heavy.id)
+
+    var rare = heavy
+    rare.isRare = true
+    XCTAssertEqual(rare.effectiveSelectionWeight, 0.9, accuracy: 0.0001)
+  }
+
+  func testWeightedSelectionDoesNotRepeatRecentHistory() throws {
+    let directory = temporaryDirectory()
+    defer { try? FileManager.default.removeItem(at: directory) }
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    let items = try (0..<6).map {
+      try availableItem(named: "Video \($0)", in: directory)
+    }
+    let storageURL = directory.appendingPathComponent("VideoLibrary.json")
+    try write(items, to: storageURL)
+    let library = VideoLibrary(storageURL: storageURL, randomValue: { 0 })
+    library.updateSelectionSettings(
+      VideoSelectionSettings(mode: .weightedRandom, recentHistoryCount: 4))
+    var played: [UUID] = []
+
+    for offset in 0..<18 {
+      let selected = try XCTUnwrap(
+        library.randomEnabledVideo(at: Date(timeIntervalSince1970: Double(offset))))
+      XCTAssertFalse(played.suffix(4).contains(selected.id))
+      played.append(selected.id)
+      library.recordPlayback(
+        of: selected, at: Date(timeIntervalSince1970: Double(offset)))
+    }
+  }
+
+  func testVideoCooldownMakesOnlyThatVideoTemporarilyIneligible() throws {
+    let directory = temporaryDirectory()
+    defer { try? FileManager.default.removeItem(at: directory) }
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    let now = Date(timeIntervalSince1970: 10_000)
+    let coolingDown = try availableItem(
+      named: "Cooling Down", in: directory, selectionCooldown: 3_600, lastPlayedAt: now)
+    let available = try availableItem(named: "Available", in: directory)
+    let storageURL = directory.appendingPathComponent("VideoLibrary.json")
+    try write([coolingDown, available], to: storageURL)
+    let library = VideoLibrary(storageURL: storageURL, randomValue: { 0 })
+
+    XCTAssertEqual(library.randomEnabledVideo(at: now)?.id, available.id)
+    XCTAssertEqual(
+      library.randomEnabledVideo(at: now.addingTimeInterval(3_600))?.id, coolingDown.id)
+
+    var alsoCoolingDown = available
+    alsoCoolingDown.selectionCooldown = 3_600
+    alsoCoolingDown.lastPlayedAt = now
+    library.update(alsoCoolingDown)
+    XCTAssertNil(library.randomEnabledVideo(at: now))
+  }
+
+  func testCooldownFilteringStillAvoidsTheMostRecentlyPlayedEligibleVideo() throws {
+    let directory = temporaryDirectory()
+    defer { try? FileManager.default.removeItem(at: directory) }
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    let items = try (0..<4).map {
+      try availableItem(named: "History \($0)", in: directory)
+    }
+    let storageURL = directory.appendingPathComponent("VideoLibrary.json")
+    try write(items, to: storageURL)
+    let library = VideoLibrary(storageURL: storageURL, randomValue: { 0.99 })
+    for (offset, item) in items.enumerated() {
+      library.recordPlayback(
+        of: item, at: Date(timeIntervalSince1970: Double(offset)))
+    }
+    for item in items.suffix(2) {
+      var coolingDown = item
+      coolingDown.selectionCooldown = 100
+      coolingDown.lastPlayedAt = Date(timeIntervalSince1970: 3)
+      library.update(coolingDown)
+    }
+
+    let selected = library.randomEnabledVideo(at: Date(timeIntervalSince1970: 4))
+
+    XCTAssertEqual(selected?.id, items[0].id)
+  }
+
+  func testShuffleBagPlaysEveryEnabledVideoOncePerCycle() throws {
+    let directory = temporaryDirectory()
+    defer { try? FileManager.default.removeItem(at: directory) }
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    let items = try (0..<5).map {
+      try availableItem(named: "Bag \($0)", in: directory)
+    }
+    let storageURL = directory.appendingPathComponent("VideoLibrary.json")
+    try write(items, to: storageURL)
+    let library = VideoLibrary(storageURL: storageURL, randomValue: { 0 })
+    library.updateSelectionSettings(
+      VideoSelectionSettings(mode: .shuffleBag, recentHistoryCount: 3))
+    var cycles: [[UUID]] = [[], []]
+
+    for index in 0..<(items.count * 2) {
+      let selected = try XCTUnwrap(
+        library.randomEnabledVideo(at: Date(timeIntervalSince1970: Double(index))))
+      cycles[index / items.count].append(selected.id)
+      library.recordPlayback(
+        of: selected, at: Date(timeIntervalSince1970: Double(index)))
+    }
+
+    XCTAssertEqual(Set(cycles[0]), Set(items.map(\.id)))
+    XCTAssertEqual(Set(cycles[1]), Set(items.map(\.id)))
+  }
+
   func testCoordinatorDisablesSchedulingWhenNoVideoRemains() async throws {
     let suiteName = "StartleCoreTests.ScareCoordinator.\(UUID().uuidString)"
     let defaults = UserDefaults(suiteName: suiteName)!
@@ -181,12 +330,64 @@ final class VideoLibraryTests: XCTestCase {
 
     XCTAssertEqual(presenter.presentationCount, 1)
     XCTAssertEqual(settings.values.totalScareCount, 0)
+    XCTAssertNil(library.videos.first?.lastPlayedAt)
 
     presenter.wasPresented = true
     await coordinator.trigger()
 
     XCTAssertEqual(presenter.presentationCount, 2)
     XCTAssertEqual(settings.values.totalScareCount, 1)
+    XCTAssertNotNil(library.videos.first?.lastPlayedAt)
+  }
+
+  func testCoordinatorKeepsSchedulingEnabledWhenEveryVideoIsCoolingDown() async throws {
+    let suiteName = "StartleCoreTests.ScareCoordinator.\(UUID().uuidString)"
+    let defaults = UserDefaults(suiteName: suiteName)!
+    defer { defaults.removePersistentDomain(forName: suiteName) }
+    let settings = SettingsStore(defaults: defaults)
+    settings.values.onboardingCompleted = true
+    try settings.setEnabled(true, hasVideos: true, emergencyShortcutAvailable: true)
+    let directory = temporaryDirectory()
+    defer { try? FileManager.default.removeItem(at: directory) }
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    let item = try availableItem(
+      named: "Cooling Down", in: directory, selectionCooldown: 3_600,
+      lastPlayedAt: Date())
+    let storageURL = directory.appendingPathComponent("VideoLibrary.json")
+    try write([item], to: storageURL)
+    let library = VideoLibrary(storageURL: storageURL)
+    let presenter = FakeScarePresenter()
+    let coordinator = ScareCoordinator(
+      settings: settings, library: library, windowController: presenter)
+
+    await coordinator.trigger()
+
+    XCTAssertTrue(settings.values.scaresEnabled)
+    XCTAssertNil(settings.errorMessage)
+    XCTAssertEqual(presenter.presentationCount, 0)
+  }
+
+  func testCoordinatorNeverPresentsOverAnExcludedFrontmostApplication() async throws {
+    let suiteName = "StartleCoreTests.ScareCoordinator.\(UUID().uuidString)"
+    let defaults = UserDefaults(suiteName: suiteName)!
+    defer { defaults.removePersistentDomain(forName: suiteName) }
+    let settings = SettingsStore(defaults: defaults)
+    settings.values.safety.excludedApplications = [
+      ExcludedApplication(bundleIdentifier: "us.zoom.xos", displayName: "zoom.us")
+    ]
+    let directory = temporaryDirectory()
+    defer { try? FileManager.default.removeItem(at: directory) }
+    let library = VideoLibrary(storageURL: directory.appendingPathComponent("VideoLibrary.json"))
+    let presenter = FakeScarePresenter()
+    let coordinator = ScareCoordinator(
+      settings: settings, library: library, windowController: presenter,
+      frontmostApplicationBundleIdentifier: { "us.zoom.xos" })
+
+    await coordinator.trigger()
+
+    XCTAssertEqual(presenter.presentationCount, 0)
+    XCTAssertNil(settings.errorMessage)
+    XCTAssertEqual(settings.values.totalScareCount, 0)
   }
 
   private func temporaryDirectory() -> URL {
@@ -198,6 +399,20 @@ final class VideoLibraryTests: XCTestCase {
     try FileManager.default.createDirectory(
       at: storageURL.deletingLastPathComponent(), withIntermediateDirectories: true)
     try JSONEncoder().encode(items).write(to: storageURL)
+  }
+
+  private func availableItem(
+    named name: String, in directory: URL, selectionWeight: Double = 1,
+    selectionCooldown: TimeInterval = 0, lastPlayedAt: Date? = nil
+  ) throws -> VideoItem {
+    let url = directory.appendingPathComponent("\(name).mov")
+    try Data("placeholder".utf8).write(to: url)
+    let bookmark = try url.bookmarkData(
+      options: [.withSecurityScope], includingResourceValuesForKeys: nil, relativeTo: nil)
+    return VideoItem(
+      displayName: name, bookmarkData: bookmark, duration: 2, lastKnownPath: url.path,
+      selectionWeight: selectionWeight, selectionCooldown: selectionCooldown,
+      lastPlayedAt: lastPlayedAt)
   }
 }
 

@@ -29,6 +29,50 @@ public enum ScareDisplayMode: String, Codable, CaseIterable, Sendable {
   }
 }
 
+public enum VideoSelectionMode: String, Codable, CaseIterable, Sendable {
+  case weightedRandom, shuffleBag
+
+  public var title: String {
+    switch self {
+    case .weightedRandom: "Weighted random"
+    case .shuffleBag: "Shuffle bag"
+    }
+  }
+}
+
+public struct VideoSelectionSettings: Codable, Equatable, Sendable {
+  public var mode: VideoSelectionMode = .weightedRandom
+  public var recentHistoryCount = 4
+
+  public init() {}
+
+  public init(mode: VideoSelectionMode, recentHistoryCount: Int = 4) {
+    self.mode = mode
+    self.recentHistoryCount = min(5, max(3, recentHistoryCount))
+  }
+
+  public init(from decoder: Decoder) throws {
+    self.init()
+    let container = try decoder.container(keyedBy: CodingKeys.self)
+    mode = try container.decodeIfPresent(VideoSelectionMode.self, forKey: .mode) ?? mode
+    recentHistoryCount =
+      try container.decodeIfPresent(Int.self, forKey: .recentHistoryCount) ?? recentHistoryCount
+    recentHistoryCount = min(5, max(3, recentHistoryCount))
+  }
+}
+
+public struct ExcludedApplication: Codable, Equatable, Hashable, Identifiable, Sendable {
+  public var bundleIdentifier: String
+  public var displayName: String
+
+  public var id: String { bundleIdentifier }
+
+  public init(bundleIdentifier: String, displayName: String) {
+    self.bundleIdentifier = bundleIdentifier
+    self.displayName = displayName
+  }
+}
+
 public struct ScheduleSettings: Codable, Equatable, Sendable {
   public var mode: ScheduleMode = .randomInterval
   public var minimumInterval: TimeInterval = 30 * 60
@@ -88,6 +132,7 @@ public struct SafetySettings: Codable, Equatable, Sendable {
   public var quietMode = false
   public var countdownSeconds = 0
   public var neverRunAtLogin = true
+  public var excludedApplications: [ExcludedApplication] = []
 
   public init() {}
 
@@ -118,6 +163,16 @@ public struct SafetySettings: Codable, Equatable, Sendable {
       try container.decodeIfPresent(Int.self, forKey: .countdownSeconds) ?? countdownSeconds
     neverRunAtLogin =
       try container.decodeIfPresent(Bool.self, forKey: .neverRunAtLogin) ?? neverRunAtLogin
+    excludedApplications =
+      try container.decodeIfPresent([ExcludedApplication].self, forKey: .excludedApplications)
+      ?? excludedApplications
+  }
+
+  public func excludesApplication(bundleIdentifier: String?) -> Bool {
+    guard let bundleIdentifier else { return false }
+    return excludedApplications.contains {
+      $0.bundleIdentifier.caseInsensitiveCompare(bundleIdentifier) == .orderedSame
+    }
   }
 }
 
@@ -187,12 +242,17 @@ public struct VideoItem: Identifiable, Codable, Equatable, Sendable {
   public var trimEnd: TimeInterval?
   public var lastKnownPath: String
   public var isMissing: Bool
+  public var selectionWeight: Double
+  public var isRare: Bool
+  public var selectionCooldown: TimeInterval
+  public var lastPlayedAt: Date?
 
   public init(
     id: UUID = UUID(), displayName: String, bookmarkData: Data,
     duration: TimeInterval, isEnabled: Bool = true, volume: Double = 1,
     trimStart: TimeInterval = 0, trimEnd: TimeInterval? = nil,
-    lastKnownPath: String, isMissing: Bool = false
+    lastKnownPath: String, isMissing: Bool = false, selectionWeight: Double = 1,
+    isRare: Bool = false, selectionCooldown: TimeInterval = 0, lastPlayedAt: Date? = nil
   ) {
     self.id = id
     self.displayName = displayName
@@ -204,6 +264,31 @@ public struct VideoItem: Identifiable, Codable, Equatable, Sendable {
     self.trimEnd = trimEnd
     self.lastKnownPath = lastKnownPath
     self.isMissing = isMissing
+    self.selectionWeight = selectionWeight
+    self.isRare = isRare
+    self.selectionCooldown = selectionCooldown
+    self.lastPlayedAt = lastPlayedAt
+    normalizePlaybackSettings()
+  }
+
+  public init(from decoder: Decoder) throws {
+    let container = try decoder.container(keyedBy: CodingKeys.self)
+    id = try container.decode(UUID.self, forKey: .id)
+    displayName = try container.decode(String.self, forKey: .displayName)
+    bookmarkData = try container.decode(Data.self, forKey: .bookmarkData)
+    duration = try container.decode(TimeInterval.self, forKey: .duration)
+    isEnabled = try container.decode(Bool.self, forKey: .isEnabled)
+    volume = try container.decode(Double.self, forKey: .volume)
+    trimStart = try container.decode(TimeInterval.self, forKey: .trimStart)
+    trimEnd = try container.decodeIfPresent(TimeInterval.self, forKey: .trimEnd)
+    lastKnownPath = try container.decode(String.self, forKey: .lastKnownPath)
+    isMissing = try container.decode(Bool.self, forKey: .isMissing)
+    selectionWeight =
+      try container.decodeIfPresent(Double.self, forKey: .selectionWeight) ?? 1
+    isRare = try container.decodeIfPresent(Bool.self, forKey: .isRare) ?? false
+    selectionCooldown =
+      try container.decodeIfPresent(TimeInterval.self, forKey: .selectionCooldown) ?? 0
+    lastPlayedAt = try container.decodeIfPresent(Date.self, forKey: .lastPlayedAt)
     normalizePlaybackSettings()
   }
 
@@ -220,9 +305,21 @@ public struct VideoItem: Identifiable, Codable, Equatable, Sendable {
     max(0.01, effectiveTrimEnd - effectiveTrimStart)
   }
 
+  public var effectiveSelectionWeight: Double {
+    selectionWeight * (isRare ? 0.1 : 1)
+  }
+
+  public func isEligible(at date: Date) -> Bool {
+    guard selectionCooldown > 0, let lastPlayedAt else { return true }
+    return date.timeIntervalSince(lastPlayedAt) >= selectionCooldown
+  }
+
   public mutating func normalizePlaybackSettings() {
     duration = duration.isFinite ? max(0.01, duration) : 0.01
     volume = min(1, max(0, volume))
+    selectionWeight = selectionWeight.isFinite ? min(10, max(0.1, selectionWeight)) : 1
+    selectionCooldown =
+      selectionCooldown.isFinite ? min(30 * 24 * 60 * 60, max(0, selectionCooldown)) : 0
     trimStart = effectiveTrimStart
     guard trimEnd != nil else { return }
     let normalizedEnd = effectiveTrimEnd
