@@ -52,7 +52,7 @@ Once installed, Startle checks for updates through Sparkle. You can also choose 
 
 ## Architecture
 
-- `SettingsStore` persists simple and structured preferences through Codable data in UserDefaults.
+- `SettingsStore` persists simple and structured preferences plus a bounded 50-event local activity history through Codable data in UserDefaults.
 - `VideoLibrary` creates security-scoped bookmarks, validates AVFoundation playability, stores Codable metadata in Application Support, refreshes stale bookmarks, and flags missing files.
 - `ScheduleEngine` is a pure, deterministic scheduling policy layer. It handles random/fixed/chance modes, active windows, overnight ranges, cooldowns, and daily limits.
 - `ScareScheduler` owns exactly one cancellable Swift-concurrency timer and always generates a new future schedule after wake.
@@ -73,6 +73,8 @@ Only one scheduling task exists at a time. Disabling scares cancels it. Preferen
 Startle is sandboxed. The file picker grants read-only access only to videos selected by the user; bookmarks preserve that access across launches. Videos are never copied or uploaded. Device-running, Apple screen-capture app, display, battery, output-volume, window, and frontmost-app checks use public system APIs. App exclusions are stored locally by bundle identifier and use `NSWorkspace` without Accessibility permission. Focus status is unavailable through public macOS APIs, and third-party sharing detection is best-effort.
 
 Startle contains no analytics, advertising SDKs, or telemetry. Its only network use is checking for and downloading signed releases from GitHub through Sparkle. Its privacy manifest declares no tracking or collected data. Local file paths and security-scoped bookmark data remain on the Mac.
+
+The dashboard records the latest 50 played, skipped, dismissed, and failed events locally so scheduling and safety decisions remain understandable. This history contains video display names and selected excluded-app names, never video paths, and can be cleared from the dashboard.
 
 Automatic safety checks can be incomplete when macOS or another app does not expose the needed state. Read [SAFETY.md](SAFETY.md) before enabling scheduled scares.
 

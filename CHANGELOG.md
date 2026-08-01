@@ -6,6 +6,9 @@ All notable changes will be documented here. The project follows [Semantic Versi
 
 ### Added
 
+- Live dashboard and menu-bar status that explains active safety, schedule, app-exclusion, and video-cooldown blocks.
+- A local 50-event activity history for played, skipped, dismissed, and failed scares.
+- Pause controls for 15 minutes, 1 hour, until tomorrow, or until the next active window, plus Resume Now.
 - A local per-app exclusion list that blocks scares while a selected app is frontmost, without requiring Accessibility permission.
 - Secure in-app update checks, downloads, installation, and relaunch through Sparkle.
 - Check-for-updates actions in the app menu, menu-bar menu, and About screen.

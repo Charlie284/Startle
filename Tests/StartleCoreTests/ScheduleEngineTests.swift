@@ -48,6 +48,32 @@ final class ScheduleEngineTests: XCTestCase {
       engine.nextTriggerDate(after: now, settings: settings, using: &rng, calendar: calendar))
   }
 
+  func testNextActiveWindowStartFindsLaterTodayAndNextSelectedDay() throws {
+    var settings = allDaySettings()
+    settings.activeDays = [3, 5]
+    settings.activeStartMinutes = 9 * 60
+    settings.activeEndMinutes = 17 * 60
+
+    XCTAssertEqual(
+      engine.nextActiveWindowStart(
+        after: date(2026, 7, 14, 8, 0), settings: settings, calendar: calendar),
+      date(2026, 7, 14, 9, 0))
+    XCTAssertEqual(
+      engine.nextActiveWindowStart(
+        after: date(2026, 7, 14, 10, 0), settings: settings, calendar: calendar),
+      date(2026, 7, 16, 9, 0))
+  }
+
+  func testNextActiveWindowStartUsesMidnightForAllDayWindows() {
+    var settings = allDaySettings()
+    settings.activeDays = [4]
+
+    XCTAssertEqual(
+      engine.nextActiveWindowStart(
+        after: date(2026, 7, 14, 10, 0), settings: settings, calendar: calendar),
+      date(2026, 7, 15, 0, 0))
+  }
+
   func testCooldownBlocksUntilElapsed() {
     var settings = allDaySettings()
     settings.cooldown = 1800
@@ -166,6 +192,27 @@ final class ScheduleEngineTests: XCTestCase {
         context: .init(
           now: now, lastScare: nil, scaresToday: 0, pauseUntil: now.addingTimeInterval(60)),
         settings: settings, calendar: calendar))
+  }
+
+  @MainActor
+  func testSchedulerReportsPauseAndRecordsSkippedCheck() async throws {
+    let suiteName = "StartleCoreTests.ScareScheduler.\(UUID().uuidString)"
+    let defaults = UserDefaults(suiteName: suiteName)!
+    defer { defaults.removePersistentDomain(forName: suiteName) }
+    let settings = SettingsStore(defaults: defaults)
+    settings.values.onboardingCompleted = true
+    settings.values.schedule = allDaySettings()
+    try settings.setEnabled(true, hasVideos: true, emergencyShortcutAvailable: true)
+    let pauseUntil = Date().addingTimeInterval(600)
+    settings.pause(until: pauseUntil)
+    let scheduler = ScareScheduler(settings: settings, activity: SystemActivityMonitor())
+
+    XCTAssertEqual(scheduler.currentStatus(), .blocked(.paused(until: pauseUntil)))
+
+    await scheduler.handleTimer()
+
+    XCTAssertEqual(settings.values.activityEvents.first?.kind, .skipped)
+    XCTAssertEqual(settings.values.activityEvents.first?.reason, .paused)
   }
 
   func testTriggerDecisionIncludesChanceMode() {

@@ -23,6 +23,7 @@ final class SettingsStoreTests: XCTestCase {
     XCTAssertFalse(settings.safety.pauseForFocus)
     XCTAssertTrue(settings.safety.excludedApplications.isEmpty)
     XCTAssertEqual(settings.appearance.displayMode, .fullScreen)
+    XCTAssertTrue(settings.activityEvents.isEmpty)
   }
 
   func testPersistedSettingsRoundTrip() throws {
@@ -34,11 +35,54 @@ final class SettingsStoreTests: XCTestCase {
       ExcludedApplication(bundleIdentifier: "us.zoom.xos", displayName: "zoom.us")
     ]
     original.appearance.cropToFill = true
+    original.activityEvents = [
+      ActivityEvent(
+        occurredAt: Date(timeIntervalSince1970: 123), kind: .skipped,
+        reason: .cameraOrMicrophone)
+    ]
 
     let data = try JSONEncoder().encode(original)
     let decoded = try JSONDecoder().decode(PersistedSettings.self, from: data)
 
     XCTAssertEqual(decoded, original)
+  }
+
+  func testActivityHistoryKeepsNewestFiftyEventsAndCanBeCleared() {
+    let suiteName = "StartleCoreTests.SettingsStore.\(UUID().uuidString)"
+    let defaults = UserDefaults(suiteName: suiteName)!
+    defer { defaults.removePersistentDomain(forName: suiteName) }
+    let store = SettingsStore(defaults: defaults)
+
+    for index in 0..<55 {
+      store.recordActivity(
+        ActivityEvent(
+          occurredAt: Date(timeIntervalSince1970: TimeInterval(index)), kind: .skipped,
+          reason: .chanceNotSelected))
+    }
+
+    XCTAssertEqual(store.values.activityEvents.count, 50)
+    XCTAssertEqual(store.values.activityEvents.first?.occurredAt, Date(timeIntervalSince1970: 54))
+    XCTAssertEqual(store.values.activityEvents.last?.occurredAt, Date(timeIntervalSince1970: 5))
+
+    let reloaded = SettingsStore(defaults: defaults)
+    XCTAssertEqual(reloaded.values.activityEvents, store.values.activityEvents)
+
+    store.clearActivityHistory()
+    XCTAssertTrue(store.values.activityEvents.isEmpty)
+  }
+
+  func testPauseUntilAndResumeUpdatePersistedPause() {
+    let suiteName = "StartleCoreTests.SettingsStore.\(UUID().uuidString)"
+    let defaults = UserDefaults(suiteName: suiteName)!
+    defer { defaults.removePersistentDomain(forName: suiteName) }
+    let store = SettingsStore(defaults: defaults)
+    let date = Date(timeIntervalSince1970: 1_234)
+
+    store.pause(until: date)
+    XCTAssertEqual(store.values.pauseUntil, date)
+
+    store.resume()
+    XCTAssertNil(store.values.pauseUntil)
   }
 
   func testExcludedApplicationsMatchBundleIdentifiersCaseInsensitively() {

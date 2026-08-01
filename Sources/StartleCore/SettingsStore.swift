@@ -45,7 +45,15 @@ public final class SettingsStore {
   }
 
   public func pause(for interval: TimeInterval) {
-    values.pauseUntil = Date().addingTimeInterval(interval)
+    pause(until: Date().addingTimeInterval(interval))
+  }
+
+  public func pause(until date: Date) {
+    values.pauseUntil = date
+  }
+
+  public func resume() {
+    values.pauseUntil = nil
   }
 
   public func excludeApplication(_ application: ExcludedApplication) {
@@ -66,6 +74,17 @@ public final class SettingsStore {
     values.lastScareDate = date
     values.dailyScareDates.append(date)
     pruneDailyHistory(now: date)
+  }
+
+  public func recordActivity(_ event: ActivityEvent) {
+    values.activityEvents.insert(event, at: 0)
+    if values.activityEvents.count > 50 {
+      values.activityEvents.removeLast(values.activityEvents.count - 50)
+    }
+  }
+
+  public func clearActivityHistory() {
+    values.activityEvents.removeAll()
   }
 
   public func scaresToday(now: Date = Date(), calendar: Calendar = .current) -> Int {

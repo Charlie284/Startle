@@ -51,18 +51,90 @@ public final class ScareScheduler {
     return "Around " + nextTriggerDate.formatted(date: .omitted, time: .shortened)
   }
 
+  public func currentStatus(
+    at now: Date = Date(), calendar: Calendar = .current
+  ) -> SchedulerStatus {
+    guard settings.values.scaresEnabled else { return .disabled }
+    let schedule = settings.values.schedule
+    if let pauseUntil = settings.values.pauseUntil, pauseUntil > now {
+      return .blocked(.paused(until: pauseUntil))
+    }
+    if let reason = activity.blockReason(
+      by: settings.values.safety, schedule: schedule, now: now)
+    {
+      return .blocked(.safety(reason))
+    }
+    guard engine.isWithinActiveWindow(now, settings: schedule, calendar: calendar) else {
+      return .blocked(.outsideActiveWindow)
+    }
+    guard settings.scaresToday(now: now, calendar: calendar) < schedule.maximumScaresPerDay else {
+      return .blocked(.dailyLimit)
+    }
+    if let lastScareDate = settings.values.lastScareDate {
+      let cooldownEnd = lastScareDate.addingTimeInterval(schedule.cooldown)
+      if cooldownEnd > now { return .blocked(.cooldown(until: cooldownEnd)) }
+    }
+    return .ready(nextTrigger: nextTriggerDate)
+  }
+
+  public func nextActiveWindowStart(
+    after now: Date = Date(), calendar: Calendar = .current
+  ) -> Date? {
+    engine.nextActiveWindowStart(after: now, settings: settings.values.schedule, calendar: calendar)
+  }
+
   func handleTimer() async {
     defer { reschedule() }
     guard settings.values.scaresEnabled else { return }
     let schedule = settings.values.schedule
+    let now = Date()
+    if case .blocked(let reason) = currentStatus(at: now) {
+      settings.recordActivity(
+        ActivityEvent(
+          occurredAt: now, kind: .skipped, reason: reason.activityEventReason))
+      return
+    }
     let context = ScheduleContext(
-      now: Date(), lastScare: settings.values.lastScareDate,
+      now: now, lastScare: settings.values.lastScareDate,
       scaresToday: settings.scaresToday(),
-      isSystemBlocked: activity.blocked(by: settings.values.safety, schedule: schedule),
+      isSystemBlocked: false,
       pauseUntil: settings.values.pauseUntil
     )
     var rng = SystemRandomNumberGenerator()
-    guard engine.shouldTrigger(context: context, settings: schedule, using: &rng) else { return }
+    guard engine.shouldTrigger(context: context, settings: schedule, using: &rng) else {
+      settings.recordActivity(
+        ActivityEvent(occurredAt: now, kind: .skipped, reason: .chanceNotSelected))
+      return
+    }
     await onTrigger?()
+  }
+}
+
+extension ScheduleBlockReason {
+  fileprivate var activityEventReason: ActivityEventReason {
+    switch self {
+    case .paused: .paused
+    case .outsideActiveWindow: .outsideActiveWindow
+    case .dailyLimit: .dailyLimit
+    case .cooldown: .cooldown
+    case .excludedApplication: .excludedApplication
+    case .videoCooldown: .noEligibleVideo
+    case .safety(let reason): reason.activityEventReason
+    }
+  }
+}
+
+extension SafetyBlockReason {
+  fileprivate var activityEventReason: ActivityEventReason {
+    switch self {
+    case .asleepOrLocked: .asleepOrLocked
+    case .screenCapture: .screenCapture
+    case .fullScreenApp: .fullScreenApp
+    case .cameraOrMicrophone: .cameraOrMicrophone
+    case .externalDisplay: .externalDisplay
+    case .lowBattery: .lowBattery
+    case .highVolume: .highVolume
+    case .idleReturnGracePeriod: .idleReturnGracePeriod
+    }
   }
 }

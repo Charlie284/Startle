@@ -7,7 +7,7 @@ import os
 protocol ScarePresenting: AnyObject {
   func present(
     video: VideoItem, url: URL, safety: SafetySettings, appearance: AppearanceSettings
-  ) async throws -> Bool
+  ) async throws -> ScarePresentationOutcome
   func dismiss()
 }
 
@@ -45,11 +45,15 @@ public final class ScareCoordinator {
 
   public func trigger(isTest: Bool = false, specificVideo: VideoItem? = nil) async {
     guard !isPresenting else { return }
-    guard
-      !settings.values.safety.excludesApplication(
-        bundleIdentifier: frontmostApplicationBundleIdentifier())
-    else { return }
+    if let excludedApplication = frontmostExcludedApplication() {
+      recordSkipped(
+        reason: .excludedApplication, context: excludedApplication.displayName, isTest: isTest)
+      return
+    }
     guard let video = specificVideo ?? library.randomEnabledVideo() else {
+      recordSkipped(
+        reason: library.enabledVideos.isEmpty ? .noAvailableVideo : .noEligibleVideo,
+        isTest: isTest)
       if !isTest && library.enabledVideos.isEmpty {
         try? settings.setEnabled(
           false, hasVideos: false, emergencyShortcutAvailable: false)
@@ -62,24 +66,42 @@ public final class ScareCoordinator {
     do {
       let resolvedAccess = try library.resolve(video)
       access = resolvedAccess
-      guard
-        !settings.values.safety.excludesApplication(
-          bundleIdentifier: frontmostApplicationBundleIdentifier())
-      else {
+      if let excludedApplication = frontmostExcludedApplication() {
         if resolvedAccess.securityScoped {
           resolvedAccess.url.stopAccessingSecurityScopedResource()
         }
+        recordSkipped(
+          reason: .excludedApplication, context: excludedApplication.displayName, isTest: isTest)
         isPresenting = false
         return
       }
-      let wasPresented = try await windowController.present(
+      let outcome = try await windowController.present(
         video: video, url: resolvedAccess.url, safety: settings.values.safety,
         appearance: settings.values.appearance)
-      if wasPresented && !isTest {
+      switch outcome {
+      case .completed:
+        settings.recordActivity(
+          ActivityEvent(kind: .played, videoName: video.displayName, isTest: isTest))
+      case .dismissed:
+        settings.recordActivity(
+          ActivityEvent(kind: .dismissed, videoName: video.displayName, isTest: isTest))
+      case .skipped:
+        if let excludedApplication = frontmostExcludedApplication() {
+          recordSkipped(
+            reason: .excludedApplication, context: excludedApplication.displayName,
+            isTest: isTest)
+        } else {
+          recordSkipped(reason: .presentationCancelled, isTest: isTest)
+        }
+      }
+      if outcome == .completed && !isTest {
         library.recordPlayback(of: video)
         settings.recordScare()
       }
     } catch {
+      settings.recordActivity(
+        ActivityEvent(
+          kind: .failed, reason: .playbackFailed, videoName: video.displayName, isTest: isTest))
       if !isTest && library.enabledVideos.isEmpty {
         try? settings.setEnabled(
           false, hasVideos: false, emergencyShortcutAvailable: false)
@@ -93,4 +115,18 @@ public final class ScareCoordinator {
   }
 
   public func dismiss() { windowController.dismiss() }
+
+  private func frontmostExcludedApplication() -> ExcludedApplication? {
+    guard let bundleIdentifier = frontmostApplicationBundleIdentifier() else { return nil }
+    return settings.values.safety.excludedApplications.first {
+      $0.bundleIdentifier.caseInsensitiveCompare(bundleIdentifier) == .orderedSame
+    }
+  }
+
+  private func recordSkipped(
+    reason: ActivityEventReason, context: String? = nil, isTest: Bool
+  ) {
+    settings.recordActivity(
+      ActivityEvent(kind: .skipped, reason: reason, context: context, isTest: isTest))
+  }
 }

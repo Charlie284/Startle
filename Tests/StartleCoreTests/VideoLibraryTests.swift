@@ -220,6 +220,7 @@ final class VideoLibraryTests: XCTestCase {
     let library = VideoLibrary(storageURL: storageURL, randomValue: { 0 })
 
     XCTAssertEqual(library.randomEnabledVideo(at: now)?.id, available.id)
+    XCTAssertNil(library.nextVideoEligibilityDate(at: now))
     XCTAssertEqual(
       library.randomEnabledVideo(at: now.addingTimeInterval(3_600))?.id, coolingDown.id)
 
@@ -228,6 +229,29 @@ final class VideoLibraryTests: XCTestCase {
     alsoCoolingDown.lastPlayedAt = now
     library.update(alsoCoolingDown)
     XCTAssertNil(library.randomEnabledVideo(at: now))
+    XCTAssertEqual(library.nextVideoEligibilityDate(at: now), now.addingTimeInterval(3_600))
+  }
+
+  func testShuffleBagEligibilityDateUsesOnlyRemainingVideos() throws {
+    let directory = temporaryDirectory()
+    defer { try? FileManager.default.removeItem(at: directory) }
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    let now = Date(timeIntervalSince1970: 10_000)
+    let available = try availableItem(named: "Available", in: directory)
+    let coolingDown = try availableItem(
+      named: "Cooling Down", in: directory, selectionCooldown: 3_600, lastPlayedAt: now)
+    let storageURL = directory.appendingPathComponent("VideoLibrary.json")
+    try write([available, coolingDown], to: storageURL)
+    let library = VideoLibrary(storageURL: storageURL, randomValue: { 0 })
+    library.updateSelectionSettings(
+      VideoSelectionSettings(mode: .shuffleBag, recentHistoryCount: 1))
+
+    let selected = try XCTUnwrap(library.randomEnabledVideo(at: now))
+    XCTAssertEqual(selected.id, available.id)
+    library.recordPlayback(of: selected, at: now)
+
+    XCTAssertNil(library.randomEnabledVideo(at: now))
+    XCTAssertEqual(library.nextVideoEligibilityDate(at: now), now.addingTimeInterval(3_600))
   }
 
   func testCooldownFilteringStillAvoidsTheMostRecentlyPlayedEligibleVideo() throws {
@@ -322,7 +346,7 @@ final class VideoLibraryTests: XCTestCase {
     try write([item], to: storageURL)
     let library = VideoLibrary(storageURL: storageURL)
     let presenter = FakeScarePresenter()
-    presenter.wasPresented = false
+    presenter.outcome = .skipped
     let coordinator = ScareCoordinator(
       settings: settings, library: library, windowController: presenter)
 
@@ -331,13 +355,43 @@ final class VideoLibraryTests: XCTestCase {
     XCTAssertEqual(presenter.presentationCount, 1)
     XCTAssertEqual(settings.values.totalScareCount, 0)
     XCTAssertNil(library.videos.first?.lastPlayedAt)
+    XCTAssertEqual(settings.values.activityEvents.first?.kind, .skipped)
 
-    presenter.wasPresented = true
+    presenter.outcome = .completed
     await coordinator.trigger()
 
     XCTAssertEqual(presenter.presentationCount, 2)
     XCTAssertEqual(settings.values.totalScareCount, 1)
     XCTAssertNotNil(library.videos.first?.lastPlayedAt)
+    XCTAssertEqual(settings.values.activityEvents.first?.kind, .played)
+  }
+
+  func testCoordinatorRecordsDismissedAndFailedPresentations() async throws {
+    let suiteName = "StartleCoreTests.ScareCoordinator.\(UUID().uuidString)"
+    let defaults = UserDefaults(suiteName: suiteName)!
+    defer { defaults.removePersistentDomain(forName: suiteName) }
+    let settings = SettingsStore(defaults: defaults)
+    let directory = temporaryDirectory()
+    defer { try? FileManager.default.removeItem(at: directory) }
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    let item = try availableItem(named: "Clip", in: directory)
+    let storageURL = directory.appendingPathComponent("VideoLibrary.json")
+    try write([item], to: storageURL)
+    let library = VideoLibrary(storageURL: storageURL)
+    let presenter = FakeScarePresenter()
+    let coordinator = ScareCoordinator(
+      settings: settings, library: library, windowController: presenter)
+
+    presenter.outcome = .dismissed
+    await coordinator.trigger()
+    XCTAssertEqual(settings.values.activityEvents.first?.kind, .dismissed)
+    XCTAssertEqual(settings.values.totalScareCount, 0)
+
+    presenter.error = StartleError.playbackFailed("Test failure")
+    await coordinator.trigger()
+    XCTAssertEqual(settings.values.activityEvents.first?.kind, .failed)
+    XCTAssertEqual(settings.values.activityEvents.first?.reason, .playbackFailed)
+    XCTAssertEqual(settings.values.totalScareCount, 0)
   }
 
   func testCoordinatorKeepsSchedulingEnabledWhenEveryVideoIsCoolingDown() async throws {
@@ -388,6 +442,9 @@ final class VideoLibraryTests: XCTestCase {
     XCTAssertEqual(presenter.presentationCount, 0)
     XCTAssertNil(settings.errorMessage)
     XCTAssertEqual(settings.values.totalScareCount, 0)
+    XCTAssertEqual(settings.values.activityEvents.first?.kind, .skipped)
+    XCTAssertEqual(settings.values.activityEvents.first?.reason, .excludedApplication)
+    XCTAssertEqual(settings.values.activityEvents.first?.context, "zoom.us")
   }
 
   private func temporaryDirectory() -> URL {
@@ -418,15 +475,17 @@ final class VideoLibraryTests: XCTestCase {
 
 @MainActor
 private final class FakeScarePresenter: ScarePresenting {
-  var wasPresented = true
+  var outcome = ScarePresentationOutcome.completed
+  var error: Error?
   private(set) var presentationCount = 0
   private(set) var dismissCount = 0
 
   func present(
     video: VideoItem, url: URL, safety: SafetySettings, appearance: AppearanceSettings
-  ) async throws -> Bool {
+  ) async throws -> ScarePresentationOutcome {
     presentationCount += 1
-    return wasPresented
+    if let error { throw error }
+    return outcome
   }
 
   func dismiss() {

@@ -51,7 +51,7 @@ public final class ScareWindowController {
   private var itemStatusObservation: NSKeyValueObservation?
   private var playbackStatusObservation: NSKeyValueObservation?
   private var keyMonitor: Any?
-  private var completion: CheckedContinuation<Void, Error>?
+  private var completion: CheckedContinuation<ScarePresentationOutcome, Error>?
   private var playbackStartTask: Task<Void, Never>?
   private var stallWatchdogTask: Task<Void, Never>?
   private var presentationWatchdogTask: Task<Void, Never>?
@@ -66,8 +66,8 @@ public final class ScareWindowController {
 
   public func present(
     video: VideoItem, url: URL, safety: SafetySettings, appearance: AppearanceSettings
-  ) async throws -> Bool {
-    guard !isPresenting, presentationID == nil else { return false }
+  ) async throws -> ScarePresentationOutcome {
+    guard !isPresenting, presentationID == nil else { return .skipped }
     let currentPresentationID = UUID()
     presentationID = currentPresentationID
     let asset = AVURLAsset(url: url)
@@ -75,11 +75,11 @@ public final class ScareWindowController {
     do {
       isPlayable = try await asset.load(.isPlayable)
     } catch {
-      guard presentationID == currentPresentationID else { return false }
+      guard presentationID == currentPresentationID else { return .skipped }
       presentationID = nil
       throw error
     }
-    guard presentationID == currentPresentationID else { return false }
+    guard presentationID == currentPresentationID else { return .skipped }
     guard isPlayable else {
       presentationID = nil
       throw StartleError.playbackFailed("The selected movie is not playable.")
@@ -89,13 +89,13 @@ public final class ScareWindowController {
         bundleIdentifier: NSWorkspace.shared.frontmostApplication?.bundleIdentifier)
     else {
       presentationID = nil
-      return false
+      return .skipped
     }
     guard let fallbackScreen = NSScreen.main ?? NSScreen.screens.first else {
       presentationID = nil
       throw StartleError.playbackFailed("No active display is available.")
     }
-    try await withCheckedThrowingContinuation { continuation in
+    return try await withCheckedThrowingContinuation { continuation in
       completion = continuation
       previousApplication = NSWorkspace.shared.frontmostApplication
       makeWindows(
@@ -109,12 +109,11 @@ public final class ScareWindowController {
           video: video, countdownSeconds: safety.countdownSeconds),
         presentationID: currentPresentationID)
     }
-    return true
   }
 
   public func dismiss() {
     presentationID = nil
-    finish(nil)
+    finish(.dismissed)
   }
 
   private func makeWindows(
@@ -181,14 +180,14 @@ public final class ScareWindowController {
       endObserver = NotificationCenter.default.addObserver(
         forName: .AVPlayerItemDidPlayToEndTime, object: firstItem, queue: .main
       ) { [weak self] _ in
-        Task { @MainActor in self?.finish(nil) }
+        Task { @MainActor in self?.finish(.completed) }
       }
       failureObserver = NotificationCenter.default.addObserver(
         forName: .AVPlayerItemFailedToPlayToEndTime, object: firstItem, queue: .main
       ) { [weak self] note in
         let error = note.userInfo?[AVPlayerItemFailedToPlayToEndTimeErrorKey] as? Error
         Task { @MainActor in
-          self?.finish(
+          self?.fail(
             StartleError.playbackFailed(error?.localizedDescription ?? "Unknown player error"))
         }
       }
@@ -200,7 +199,7 @@ public final class ScareWindowController {
       itemStatusObservation = firstItem.observe(\.status, options: [.new]) { [weak self] item, _ in
         guard item.status == .failed else { return }
         Task { @MainActor in
-          self?.finish(
+          self?.fail(
             StartleError.playbackFailed(
               item.error?.localizedDescription ?? "The player item could not be prepared."))
         }
@@ -263,7 +262,7 @@ public final class ScareWindowController {
     stallWatchdogTask = Task { @MainActor [weak self] in
       do { try await Task.sleep(for: .seconds(15)) } catch { return }
       guard let self, self.presentationID == currentPresentationID else { return }
-      self.finish(StartleError.playbackFailed("Playback stalled and did not recover."))
+      self.fail(StartleError.playbackFailed("Playback stalled and did not recover."))
     }
   }
 
@@ -272,7 +271,7 @@ public final class ScareWindowController {
     presentationWatchdogTask = Task { @MainActor [weak self] in
       do { try await Task.sleep(for: .seconds(max(30, interval))) } catch { return }
       guard let self, self.presentationID == presentationID else { return }
-      self.finish(StartleError.playbackFailed("Playback exceeded its expected duration."))
+      self.fail(StartleError.playbackFailed("Playback exceeded its expected duration."))
     }
   }
 
@@ -282,7 +281,15 @@ public final class ScareWindowController {
     TimeInterval(max(0, countdownSeconds)) + video.effectivePlaybackDuration + 30
   }
 
-  private func finish(_ error: Error?) {
+  private func finish(_ outcome: ScarePresentationOutcome) {
+    finish(outcome: outcome, error: nil)
+  }
+
+  private func fail(_ error: Error) {
+    finish(outcome: .skipped, error: error)
+  }
+
+  private func finish(outcome: ScarePresentationOutcome, error: Error?) {
     guard isPresenting || completion != nil else { return }
     for player in players {
       player.pause()
@@ -324,7 +331,7 @@ public final class ScareWindowController {
         "Scare ended with error: \(error.localizedDescription, privacy: .private(mask: .hash))")
       pending?.resume(throwing: error)
     } else {
-      pending?.resume()
+      pending?.resume(returning: outcome)
     }
   }
 

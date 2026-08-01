@@ -62,9 +62,13 @@ public final class SystemActivityMonitor {
   }
 
   public func blocked(by safety: SafetySettings, schedule: ScheduleSettings) -> Bool {
-    safetyPolicy.blockReason(
-      for: snapshot, safety: safety, schedule: schedule, now: Date()
-    ) != nil
+    blockReason(by: safety, schedule: schedule) != nil
+  }
+
+  public func blockReason(
+    by safety: SafetySettings, schedule: ScheduleSettings, now: Date = Date()
+  ) -> SafetyBlockReason? {
+    safetyPolicy.blockReason(for: snapshot, safety: safety, schedule: schedule, now: now)
   }
 
   public var snapshot: SystemActivitySnapshot {

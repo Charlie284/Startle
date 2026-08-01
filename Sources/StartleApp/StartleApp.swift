@@ -60,11 +60,18 @@ private struct MenuBarContent: View {
     Toggle(
       "Scares Enabled",
       isOn: Binding(get: { state.settings.values.scaresEnabled }, set: state.setEnabled))
-    Text(state.scheduler.nextWindowDescription).foregroundStyle(.secondary)
+    Text(menuBarStatusDescription).foregroundStyle(.secondary)
     Divider()
     Button("Trigger Test Scare") { state.testScare() }.disabled(state.library.enabledVideos.isEmpty)
-    Button("Pause for 1 Hour") { state.pauseOneHour() }.disabled(
-      !state.settings.values.scaresEnabled)
+    Menu("Pause") {
+      Button("15 Minutes") { state.pause(for: 15 * 60) }
+      Button("1 Hour") { state.pause(for: 60 * 60) }
+      Button("Until Tomorrow") { state.pauseUntilTomorrow() }
+      Button("Until Next Active Window") { state.pauseUntilNextActiveWindow() }
+    }
+    .disabled(!state.settings.values.scaresEnabled)
+    Button("Resume Now") { state.resumeNow() }
+      .disabled(!hasActivePause)
     Divider()
     Button("Open Startle…") {
       openWindow(id: "main")
@@ -74,5 +81,52 @@ private struct MenuBarContent: View {
       .disabled(!state.softwareUpdater.canCheckForUpdates)
     Button("Quit Startle") { NSApplication.shared.terminate(nil) }
       .keyboardShortcut("q")
+  }
+
+  private var hasActivePause: Bool {
+    guard let pauseUntil = state.settings.values.pauseUntil else { return false }
+    return pauseUntil > Date()
+  }
+
+  private var menuBarStatusDescription: String {
+    switch state.currentStatus() {
+    case .disabled:
+      "Scares are disabled"
+    case .ready(let nextTrigger):
+      nextTrigger.map {
+        "Next check around " + $0.formatted(date: .omitted, time: .shortened)
+      } ?? "Scheduling…"
+    case .blocked(.paused(let until)):
+      "Paused until " + until.formatted(date: .omitted, time: .shortened)
+    case .blocked(.safety(let reason)):
+      "Blocked: " + reason.menuBarDescription
+    case .blocked(.outsideActiveWindow):
+      "Blocked: outside active hours"
+    case .blocked(.dailyLimit):
+      "Blocked: daily limit reached"
+    case .blocked(.cooldown(let until)):
+      "Cooling down until " + until.formatted(date: .omitted, time: .shortened)
+    case .blocked(.excludedApplication(let name)):
+      "Blocked while using " + name
+    case .blocked(.videoCooldown(let until)):
+      until.map {
+        "Videos cooling down until " + $0.formatted(date: .omitted, time: .shortened)
+      } ?? "Videos are temporarily unavailable"
+    }
+  }
+}
+
+extension SafetyBlockReason {
+  fileprivate var menuBarDescription: String {
+    switch self {
+    case .asleepOrLocked: "Mac asleep or locked"
+    case .screenCapture: "screen capture active"
+    case .fullScreenApp: "full-screen app active"
+    case .cameraOrMicrophone: "camera or microphone active"
+    case .externalDisplay: "external display connected"
+    case .lowBattery: "battery below safety limit"
+    case .highVolume: "volume above safety limit"
+    case .idleReturnGracePeriod: "return-from-idle grace period"
+    }
   }
 }

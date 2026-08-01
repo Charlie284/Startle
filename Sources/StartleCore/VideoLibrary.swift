@@ -38,6 +38,17 @@ public final class VideoLibrary {
 
   public var enabledVideos: [VideoItem] { videos.filter(\.isEnabled).filter { !$0.isMissing } }
 
+  public func nextVideoEligibilityDate(at date: Date = Date()) -> Date? {
+    let candidates = selectionCandidates()
+    guard !candidates.isEmpty, candidates.allSatisfy({ !$0.isEligible(at: date) }) else {
+      return nil
+    }
+    return candidates.compactMap { video in
+      guard let lastPlayedAt = video.lastPlayedAt, video.selectionCooldown > 0 else { return nil }
+      return lastPlayedAt.addingTimeInterval(video.selectionCooldown)
+    }.min()
+  }
+
   @discardableResult
   public func importVideos(from urls: [URL]) async -> Int {
     var imported = 0
@@ -124,19 +135,14 @@ public final class VideoLibrary {
   }
 
   public func randomEnabledVideo(at date: Date = Date()) -> VideoItem? {
-    let available = enabledVideos
-    guard !available.isEmpty else { return nil }
-    let eligible = available.filter { $0.isEligible(at: date) }
+    let eligible = selectionCandidates().filter { $0.isEligible(at: date) }
     guard !eligible.isEmpty else { return nil }
 
     switch selectionSettings.mode {
     case .weightedRandom:
       return weightedChoice(from: excludingRecentVideos(in: eligible))
     case .shuffleBag:
-      synchronizeShuffleBag(with: available)
-      let remaining = eligible.filter { shuffleBag.contains($0.id) }
-      guard !remaining.isEmpty else { return nil }
-      return uniformChoice(from: excludingRecentVideos(in: remaining))
+      return uniformChoice(from: excludingRecentVideos(in: eligible))
     }
   }
 
@@ -369,6 +375,13 @@ public final class VideoLibrary {
     if shuffleBag.isEmpty {
       shuffleBag = available.map(\.id)
     }
+  }
+
+  private func selectionCandidates() -> [VideoItem] {
+    let available = enabledVideos
+    guard selectionSettings.mode == .shuffleBag else { return available }
+    synchronizeShuffleBag(with: available)
+    return available.filter { shuffleBag.contains($0.id) }
   }
 
   private func sanitizeSelectionState() {

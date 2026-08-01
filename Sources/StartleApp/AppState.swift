@@ -52,6 +52,22 @@ final class AppState {
   }
   var emergencyShortcutIsRegistered: Bool { emergencyShortcut?.isRegistered == true }
 
+  func currentStatus(at date: Date = Date(), calendar: Calendar = .current) -> SchedulerStatus {
+    let status = scheduler.currentStatus(at: date, calendar: calendar)
+    guard case .ready = status else { return status }
+    if let bundleIdentifier = NSWorkspace.shared.frontmostApplication?.bundleIdentifier,
+      let application = settings.values.safety.excludedApplications.first(where: {
+        $0.bundleIdentifier.caseInsensitiveCompare(bundleIdentifier) == .orderedSame
+      })
+    {
+      return .blocked(.excludedApplication(application.displayName))
+    }
+    if let nextEligibleDate = library.nextVideoEligibilityDate(at: date) {
+      return .blocked(.videoCooldown(until: nextEligibleDate))
+    }
+    return status
+  }
+
   func clearError() {
     settings.clearError()
     library.clearError()
@@ -74,8 +90,31 @@ final class AppState {
 
   func scheduleChanged() { scheduler.reschedule() }
 
-  func pauseOneHour() {
-    settings.pause(for: 3600)
+  func pause(for interval: TimeInterval) {
+    settings.pause(for: interval)
+    scheduler.reschedule()
+  }
+
+  func pauseUntilTomorrow(now: Date = Date(), calendar: Calendar = .current) {
+    guard
+      let tomorrow = calendar.date(
+        byAdding: .day, value: 1, to: calendar.startOfDay(for: now))
+    else { return }
+    settings.pause(until: tomorrow)
+    scheduler.reschedule()
+  }
+
+  func pauseUntilNextActiveWindow(now: Date = Date(), calendar: Calendar = .current) {
+    guard let nextWindow = scheduler.nextActiveWindowStart(after: now, calendar: calendar) else {
+      settings.present(StartleError.noActiveDays)
+      return
+    }
+    settings.pause(until: nextWindow)
+    scheduler.reschedule()
+  }
+
+  func resumeNow() {
+    settings.resume()
     scheduler.reschedule()
   }
 

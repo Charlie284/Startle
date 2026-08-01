@@ -77,6 +77,23 @@ public struct ScheduleEngine: Sendable {
       now.addingTimeInterval(max(60, interval)), settings: settings, calendar: calendar)
   }
 
+  public func nextActiveWindowStart(
+    after now: Date, settings: ScheduleSettings, calendar: Calendar = .current
+  ) -> Date? {
+    guard !settings.activeDays.isEmpty else { return nil }
+    let startOfToday = calendar.startOfDay(for: now)
+    let startMinutes =
+      settings.activeStartMinutes == settings.activeEndMinutes ? 0 : settings.activeStartMinutes
+    for dayOffset in 0...7 {
+      guard let day = calendar.date(byAdding: .day, value: dayOffset, to: startOfToday),
+        settings.activeDays.contains(calendar.component(.weekday, from: day)),
+        let candidate = calendar.date(byAdding: .minute, value: startMinutes, to: day)
+      else { continue }
+      if candidate > now { return candidate }
+    }
+    return nil
+  }
+
   public func shouldTrigger<R: RandomNumberGenerator>(
     context: ScheduleContext, settings: ScheduleSettings, using rng: inout R,
     calendar: Calendar = .current

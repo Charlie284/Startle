@@ -1,3 +1,4 @@
+import AVFoundation
 import Foundation
 import XCTest
 
@@ -136,5 +137,77 @@ final class ScareWindowControllerTests: XCTestCase {
     controller.dismiss()
 
     XCTAssertFalse(controller.isPresenting)
+  }
+
+  func testPresentReturnsDismissedForAnActivePresentation() async throws {
+    let mediaURL = try makeSilentMedia()
+    defer { try? FileManager.default.removeItem(at: mediaURL) }
+    let controller = ScareWindowController()
+    let video = videoItem(for: mediaURL, duration: 5)
+    var outcome: ScarePresentationOutcome?
+    let finished = expectation(description: "Presentation finished")
+
+    Task { @MainActor in
+      outcome = try await controller.present(
+        video: video, url: mediaURL, safety: SafetySettings(), appearance: AppearanceSettings())
+      finished.fulfill()
+    }
+    for _ in 0..<100 where !controller.isPresenting {
+      try await Task.sleep(for: .milliseconds(10))
+    }
+    XCTAssertTrue(controller.isPresenting)
+
+    controller.dismiss()
+    await fulfillment(of: [finished], timeout: 2)
+
+    XCTAssertEqual(outcome, .dismissed)
+    XCTAssertFalse(controller.isPresenting)
+  }
+
+  func testPresentReturnsCompletedWhenPlaybackEnds() async throws {
+    let mediaURL = try makeSilentMedia()
+    defer { try? FileManager.default.removeItem(at: mediaURL) }
+    let controller = ScareWindowController()
+    let video = videoItem(for: mediaURL, duration: 0.1)
+
+    let outcome = try await controller.present(
+      video: video, url: mediaURL, safety: SafetySettings(), appearance: AppearanceSettings())
+
+    XCTAssertEqual(outcome, .completed)
+    XCTAssertFalse(controller.isPresenting)
+  }
+
+  func testPresentThrowsForUnplayableMedia() async throws {
+    let invalidURL = FileManager.default.temporaryDirectory.appendingPathComponent(
+      "Startle-invalid-\(UUID().uuidString).mov")
+    defer { try? FileManager.default.removeItem(at: invalidURL) }
+    try Data("not media".utf8).write(to: invalidURL)
+    let controller = ScareWindowController()
+
+    do {
+      _ = try await controller.present(
+        video: videoItem(for: invalidURL, duration: 1), url: invalidURL,
+        safety: SafetySettings(), appearance: AppearanceSettings())
+      XCTFail("Expected unplayable media to throw")
+    } catch {
+      XCTAssertFalse(controller.isPresenting)
+    }
+  }
+
+  private func makeSilentMedia() throws -> URL {
+    let url = FileManager.default.temporaryDirectory.appendingPathComponent(
+      "Startle-silent-\(UUID().uuidString).caf")
+    let format = try XCTUnwrap(AVAudioFormat(standardFormatWithSampleRate: 8_000, channels: 1))
+    let buffer = try XCTUnwrap(AVAudioPCMBuffer(pcmFormat: format, frameCapacity: 800))
+    buffer.frameLength = 800
+    let file = try AVAudioFile(forWriting: url, settings: format.settings)
+    try file.write(from: buffer)
+    return url
+  }
+
+  private func videoItem(for url: URL, duration: TimeInterval) -> VideoItem {
+    VideoItem(
+      displayName: "Test media", bookmarkData: Data(), duration: duration,
+      lastKnownPath: url.path)
   }
 }

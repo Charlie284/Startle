@@ -40,6 +40,77 @@ public enum VideoSelectionMode: String, Codable, CaseIterable, Sendable {
   }
 }
 
+public enum ActivityEventKind: String, Codable, CaseIterable, Sendable {
+  case played, skipped, dismissed, failed
+}
+
+public enum ActivityEventReason: String, Codable, Sendable {
+  case paused
+  case outsideActiveWindow
+  case dailyLimit
+  case cooldown
+  case chanceNotSelected
+  case asleepOrLocked
+  case screenCapture
+  case fullScreenApp
+  case cameraOrMicrophone
+  case externalDisplay
+  case lowBattery
+  case highVolume
+  case idleReturnGracePeriod
+  case excludedApplication
+  case noAvailableVideo
+  case noEligibleVideo
+  case presentationCancelled
+  case playbackFailed
+}
+
+public struct ActivityEvent: Identifiable, Codable, Equatable, Sendable {
+  public let id: UUID
+  public let occurredAt: Date
+  public let kind: ActivityEventKind
+  public let reason: ActivityEventReason?
+  public let videoName: String?
+  public let context: String?
+  public let isTest: Bool
+
+  public init(
+    id: UUID = UUID(), occurredAt: Date = Date(), kind: ActivityEventKind,
+    reason: ActivityEventReason? = nil, videoName: String? = nil, context: String? = nil,
+    isTest: Bool = false
+  ) {
+    self.id = id
+    self.occurredAt = occurredAt
+    self.kind = kind
+    self.reason = reason
+    self.videoName = videoName
+    self.context = context
+    self.isTest = isTest
+  }
+}
+
+public enum ScheduleBlockReason: Equatable, Sendable {
+  case paused(until: Date)
+  case safety(SafetyBlockReason)
+  case outsideActiveWindow
+  case dailyLimit
+  case cooldown(until: Date)
+  case excludedApplication(String)
+  case videoCooldown(until: Date?)
+}
+
+public enum SchedulerStatus: Equatable, Sendable {
+  case disabled
+  case ready(nextTrigger: Date?)
+  case blocked(ScheduleBlockReason)
+}
+
+public enum ScarePresentationOutcome: Equatable, Sendable {
+  case completed
+  case dismissed
+  case skipped
+}
+
 public struct VideoSelectionSettings: Codable, Equatable, Sendable {
   public var mode: VideoSelectionMode = .weightedRandom
   public var recentHistoryCount = 4
@@ -208,6 +279,7 @@ public struct PersistedSettings: Codable, Equatable, Sendable {
   public var totalScareCount = 0
   public var dailyScareDates: [Date] = []
   public var lastScareDate: Date?
+  public var activityEvents: [ActivityEvent] = []
 
   public init() {}
 
@@ -228,6 +300,10 @@ public struct PersistedSettings: Codable, Equatable, Sendable {
     dailyScareDates =
       try container.decodeIfPresent([Date].self, forKey: .dailyScareDates) ?? dailyScareDates
     lastScareDate = try container.decodeIfPresent(Date.self, forKey: .lastScareDate)
+    activityEvents =
+      Array(
+        (try container.decodeIfPresent([ActivityEvent].self, forKey: .activityEvents)
+          ?? activityEvents).prefix(50))
   }
 }
 
@@ -328,7 +404,7 @@ public struct VideoItem: Identifiable, Codable, Equatable, Sendable {
 }
 
 public enum StartleError: LocalizedError, Sendable {
-  case noVideos, onboardingRequired, emergencyShortcutUnavailable
+  case noVideos, noActiveDays, onboardingRequired, emergencyShortcutUnavailable
   case videoUnavailable(String)
   case unsupportedVideo(String)
   case playbackFailed(String)
@@ -336,6 +412,7 @@ public enum StartleError: LocalizedError, Sendable {
   public var errorDescription: String? {
     switch self {
     case .noVideos: "Import and enable at least one video first."
+    case .noActiveDays: "Choose at least one active day before pausing until the next window."
     case .onboardingRequired: "Complete onboarding before enabling scares."
     case .emergencyShortcutUnavailable:
       "The global emergency shortcut must be available before scheduled scares can be enabled. Resolve the shortcut conflict and retry registration in Safety."
