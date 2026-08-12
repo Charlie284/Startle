@@ -85,6 +85,20 @@ final class SettingsStoreTests: XCTestCase {
     XCTAssertNil(store.values.pauseUntil)
   }
 
+  func testPauseForFourHoursUsesDurationFromNow() throws {
+    let suiteName = "StartleCoreTests.SettingsStore.\(UUID().uuidString)"
+    let defaults = UserDefaults(suiteName: suiteName)!
+    defer { defaults.removePersistentDomain(forName: suiteName) }
+    let store = SettingsStore(defaults: defaults)
+    let beforePause = Date()
+
+    store.pause(for: 4 * 60 * 60)
+
+    let pauseUntil = try XCTUnwrap(store.values.pauseUntil)
+    XCTAssertGreaterThanOrEqual(pauseUntil, beforePause.addingTimeInterval(4 * 60 * 60))
+    XCTAssertLessThan(pauseUntil, Date().addingTimeInterval(4 * 60 * 60 + 1))
+  }
+
   func testExcludedApplicationsMatchBundleIdentifiersCaseInsensitively() {
     var safety = SafetySettings()
     safety.excludedApplications = [

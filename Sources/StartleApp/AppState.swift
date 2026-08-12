@@ -95,6 +95,11 @@ final class AppState {
     scheduler.reschedule()
   }
 
+  func pause(until date: Date) {
+    settings.pause(until: date)
+    scheduler.reschedule()
+  }
+
   func pauseUntilTomorrow(now: Date = Date(), calendar: Calendar = .current) {
     guard
       let tomorrow = calendar.date(

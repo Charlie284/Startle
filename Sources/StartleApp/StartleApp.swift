@@ -22,6 +22,14 @@ struct StartleApp: App {
       }
     }
 
+    Window("Choose Date & Time", id: "custom-pause") {
+      CustomPauseView()
+        .environment(state)
+        .preferredColorScheme(colorScheme)
+    }
+    .defaultSize(width: 420, height: 210)
+    .windowResizability(.contentSize)
+
     MenuBarExtra {
       MenuBarContent()
         .environment(state)
@@ -66,8 +74,14 @@ private struct MenuBarContent: View {
     Menu("Pause") {
       Button("15 Minutes") { state.pause(for: 15 * 60) }
       Button("1 Hour") { state.pause(for: 60 * 60) }
+      Button("4 Hours…") { state.pause(for: 4 * 60 * 60) }
       Button("Until Tomorrow") { state.pauseUntilTomorrow() }
       Button("Until Next Active Window") { state.pauseUntilNextActiveWindow() }
+      Divider()
+      Button("Choose Date & Time…") {
+        openWindow(id: "custom-pause")
+        NSApp.activate()
+      }
     }
     .disabled(!state.settings.values.scaresEnabled)
     Button("Resume Now") { state.resumeNow() }
@@ -112,6 +126,46 @@ private struct MenuBarContent: View {
       until.map {
         "Videos cooling down until " + $0.formatted(date: .omitted, time: .shortened)
       } ?? "Videos are temporarily unavailable"
+    }
+  }
+}
+
+private struct CustomPauseView: View {
+  @Environment(AppState.self) private var state
+  @Environment(\.dismiss) private var dismiss
+  @State private var pauseUntil = Date().addingTimeInterval(4 * 60 * 60)
+
+  var body: some View {
+    VStack(alignment: .leading, spacing: 20) {
+      VStack(alignment: .leading, spacing: 6) {
+        Text("Choose when Startle should resume")
+          .font(.headline)
+        Text("Scares stay paused until this date and time.")
+          .foregroundStyle(.secondary)
+      }
+
+      DatePicker(
+        "Resume at", selection: $pauseUntil, in: Date()...,
+        displayedComponents: [.date, .hourAndMinute]
+      )
+
+      HStack {
+        Spacer()
+        Button("Cancel", role: .cancel) { dismiss() }
+          .keyboardShortcut(.cancelAction)
+        Button("Pause") {
+          state.pause(until: pauseUntil)
+          dismiss()
+        }
+        .keyboardShortcut(.defaultAction)
+        .disabled(!state.settings.values.scaresEnabled || pauseUntil <= Date())
+      }
+    }
+    .padding(24)
+    .frame(width: 420)
+    .onAppear {
+      let defaultPause = Date().addingTimeInterval(4 * 60 * 60)
+      pauseUntil = max(state.settings.values.pauseUntil ?? defaultPause, defaultPause)
     }
   }
 }

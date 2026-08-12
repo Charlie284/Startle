@@ -3,6 +3,7 @@ import SwiftUI
 
 struct DashboardView: View {
   @Environment(AppState.self) private var state
+  @Environment(\.openWindow) private var openWindow
   @State private var confirmClearHistory = false
 
   var body: some View {
@@ -98,8 +99,11 @@ struct DashboardView: View {
           Menu("Pause…", systemImage: "cup.and.saucer") {
             Button("15 Minutes") { state.pause(for: 15 * 60) }
             Button("1 Hour") { state.pause(for: 60 * 60) }
+            Button("4 Hours…") { state.pause(for: 4 * 60 * 60) }
             Button("Until Tomorrow") { state.pauseUntilTomorrow() }
             Button("Until Next Active Window") { state.pauseUntilNextActiveWindow() }
+            Divider()
+            Button("Choose Date & Time…") { openWindow(id: "custom-pause") }
           }
           .controlSize(.large)
           .frame(maxWidth: .infinity)
