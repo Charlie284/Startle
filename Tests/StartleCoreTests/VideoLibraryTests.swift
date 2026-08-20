@@ -447,6 +447,32 @@ final class VideoLibraryTests: XCTestCase {
     XCTAssertEqual(settings.values.activityEvents.first?.context, "zoom.us")
   }
 
+  func testCoordinatorRechecksSafetyImmediatelyBeforePresentation() async throws {
+    let suiteName = "StartleCoreTests.ScareCoordinator.\(UUID().uuidString)"
+    let defaults = UserDefaults(suiteName: suiteName)!
+    defer { defaults.removePersistentDomain(forName: suiteName) }
+    let settings = SettingsStore(defaults: defaults)
+    let directory = temporaryDirectory()
+    defer { try? FileManager.default.removeItem(at: directory) }
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    let item = try availableItem(named: "Clip", in: directory)
+    let storageURL = directory.appendingPathComponent("VideoLibrary.json")
+    try write([item], to: storageURL)
+    let library = VideoLibrary(storageURL: storageURL)
+    let presenter = FakeScarePresenter()
+    var screenCaptureStarted = false
+    presenter.beforePreflight = { screenCaptureStarted = true }
+    let coordinator = ScareCoordinator(
+      settings: settings, library: library, windowController: presenter,
+      safetyBlockReason: { screenCaptureStarted ? .screenCapture : nil })
+
+    await coordinator.trigger()
+
+    XCTAssertEqual(presenter.presentationCount, 0)
+    XCTAssertEqual(settings.values.activityEvents.first?.kind, .skipped)
+    XCTAssertEqual(settings.values.activityEvents.first?.reason, .screenCapture)
+  }
+
   private func temporaryDirectory() -> URL {
     FileManager.default.temporaryDirectory
       .appendingPathComponent("StartleCoreTests-\(UUID().uuidString)", isDirectory: true)
@@ -477,12 +503,16 @@ final class VideoLibraryTests: XCTestCase {
 private final class FakeScarePresenter: ScarePresenting {
   var outcome = ScarePresentationOutcome.completed
   var error: Error?
+  var beforePreflight: (() -> Void)?
   private(set) var presentationCount = 0
   private(set) var dismissCount = 0
 
   func present(
-    video: VideoItem, url: URL, safety: SafetySettings, appearance: AppearanceSettings
+    video: VideoItem, url: URL, safety: SafetySettings, appearance: AppearanceSettings,
+    preflight: @escaping @MainActor () -> Bool
   ) async throws -> ScarePresentationOutcome {
+    beforePreflight?()
+    guard preflight() else { return .skipped }
     presentationCount += 1
     if let error { throw error }
     return outcome

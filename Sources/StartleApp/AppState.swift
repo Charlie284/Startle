@@ -23,7 +23,7 @@ final class AppState {
     self.library = library
     self.activity = activity
     scheduler = ScareScheduler(settings: settings, activity: activity)
-    coordinator = ScareCoordinator(settings: settings, library: library)
+    coordinator = ScareCoordinator(settings: settings, library: library, activity: activity)
     launchAtLogin = LaunchAtLoginManager()
     softwareUpdater = SoftwareUpdater()
     emergencyShortcut = EmergencyShortcutManager { [weak self] in self?.emergencyDisable() }

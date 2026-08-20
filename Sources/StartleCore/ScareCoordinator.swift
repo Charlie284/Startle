@@ -6,7 +6,8 @@ import os
 @MainActor
 protocol ScarePresenting: AnyObject {
   func present(
-    video: VideoItem, url: URL, safety: SafetySettings, appearance: AppearanceSettings
+    video: VideoItem, url: URL, safety: SafetySettings, appearance: AppearanceSettings,
+    preflight: @escaping @MainActor () -> Bool
   ) async throws -> ScarePresentationOutcome
   func dismiss()
 }
@@ -21,13 +22,21 @@ public final class ScareCoordinator {
   private let library: VideoLibrary
   private let windowController: any ScarePresenting
   private let frontmostApplicationBundleIdentifier: @MainActor () -> String?
+  private let safetyBlockReason: @MainActor () -> SafetyBlockReason?
   private let logger = Logger(subsystem: "com.startle.app", category: "coordinator")
 
-  public convenience init(settings: SettingsStore, library: VideoLibrary) {
+  public convenience init(
+    settings: SettingsStore, library: VideoLibrary, activity: SystemActivityMonitor
+  ) {
     self.init(
       settings: settings, library: library, windowController: ScareWindowController(),
       frontmostApplicationBundleIdentifier: {
         NSWorkspace.shared.frontmostApplication?.bundleIdentifier
+      },
+      safetyBlockReason: {
+        activity.refresh()
+        return activity.blockReason(
+          by: settings.values.safety, schedule: settings.values.schedule)
       })
   }
 
@@ -35,16 +44,22 @@ public final class ScareCoordinator {
     settings: SettingsStore, library: VideoLibrary, windowController: any ScarePresenting,
     frontmostApplicationBundleIdentifier: @escaping @MainActor () -> String? = {
       NSWorkspace.shared.frontmostApplication?.bundleIdentifier
-    }
+    },
+    safetyBlockReason: @escaping @MainActor () -> SafetyBlockReason? = { nil }
   ) {
     self.settings = settings
     self.library = library
     self.windowController = windowController
     self.frontmostApplicationBundleIdentifier = frontmostApplicationBundleIdentifier
+    self.safetyBlockReason = safetyBlockReason
   }
 
   public func trigger(isTest: Bool = false, specificVideo: VideoItem? = nil) async {
     guard !isPresenting else { return }
+    if !isTest, let reason = safetyBlockReason() {
+      recordSafetySkipped(reason, isTest: false)
+      return
+    }
     if let excludedApplication = frontmostExcludedApplication() {
       recordSkipped(
         reason: .excludedApplication, context: excludedApplication.displayName, isTest: isTest)
@@ -75,9 +90,16 @@ public final class ScareCoordinator {
         isPresenting = false
         return
       }
+      var finalSafetyBlockReason: SafetyBlockReason?
       let outcome = try await windowController.present(
         video: video, url: resolvedAccess.url, safety: settings.values.safety,
-        appearance: settings.values.appearance)
+        appearance: settings.values.appearance,
+        preflight: { [weak self] in
+          guard let self else { return false }
+          guard !isTest else { return true }
+          finalSafetyBlockReason = self.safetyBlockReason()
+          return finalSafetyBlockReason == nil
+        })
       switch outcome {
       case .completed:
         settings.recordActivity(
@@ -86,7 +108,9 @@ public final class ScareCoordinator {
         settings.recordActivity(
           ActivityEvent(kind: .dismissed, videoName: video.displayName, isTest: isTest))
       case .skipped:
-        if let excludedApplication = frontmostExcludedApplication() {
+        if let finalSafetyBlockReason {
+          recordSafetySkipped(finalSafetyBlockReason, isTest: isTest)
+        } else if let excludedApplication = frontmostExcludedApplication() {
           recordSkipped(
             reason: .excludedApplication, context: excludedApplication.displayName,
             isTest: isTest)
@@ -128,5 +152,20 @@ public final class ScareCoordinator {
   ) {
     settings.recordActivity(
       ActivityEvent(kind: .skipped, reason: reason, context: context, isTest: isTest))
+  }
+
+  private func recordSafetySkipped(_ reason: SafetyBlockReason, isTest: Bool) {
+    let activityReason: ActivityEventReason =
+      switch reason {
+      case .asleepOrLocked: .asleepOrLocked
+      case .screenCapture: .screenCapture
+      case .fullScreenApp: .fullScreenApp
+      case .cameraOrMicrophone: .cameraOrMicrophone
+      case .externalDisplay: .externalDisplay
+      case .lowBattery: .lowBattery
+      case .highVolume: .highVolume
+      case .idleReturnGracePeriod: .idleReturnGracePeriod
+      }
+    recordSkipped(reason: activityReason, isTest: isTest)
   }
 }

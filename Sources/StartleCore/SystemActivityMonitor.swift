@@ -106,7 +106,7 @@ public final class SystemActivityMonitor {
     logger.info("System became active; overdue triggers will be discarded")
   }
 
-  private func refresh() {
+  public func refresh() {
     hasExternalDisplay = NSScreen.screens.count > 1
     batteryPercent = Self.readBatteryPercent() ?? 100
     systemVolumePercent = Self.readOutputVolume() ?? 0

@@ -65,7 +65,8 @@ public final class ScareWindowController {
   public var isPresenting: Bool { !windows.isEmpty }
 
   public func present(
-    video: VideoItem, url: URL, safety: SafetySettings, appearance: AppearanceSettings
+    video: VideoItem, url: URL, safety: SafetySettings, appearance: AppearanceSettings,
+    preflight: @escaping @MainActor () -> Bool = { true }
   ) async throws -> ScarePresentationOutcome {
     guard !isPresenting, presentationID == nil else { return .skipped }
     let currentPresentationID = UUID()
@@ -83,6 +84,10 @@ public final class ScareWindowController {
     guard isPlayable else {
       presentationID = nil
       throw StartleError.playbackFailed("The selected movie is not playable.")
+    }
+    guard preflight() else {
+      presentationID = nil
+      return .skipped
     }
     guard
       !safety.excludesApplication(

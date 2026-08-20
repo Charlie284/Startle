@@ -187,6 +187,17 @@ final class SettingsStoreTests: XCTestCase {
     XCTAssertTrue(manager.isEnabled)
   }
 
+  func testLaunchAtLoginKeepsPendingApprovalRegisteredWithoutReregistering() {
+    let service = FakeLaunchAtLoginService(status: .requiresApproval)
+    let manager = LaunchAtLoginManager(service: service)
+
+    manager.setEnabled(true, forbidden: false)
+
+    XCTAssertTrue(manager.isEnabled)
+    XCTAssertTrue(manager.requiresApproval)
+    XCTAssertEqual(service.registerCount, 0)
+  }
+
   func testEmergencyShortcutRetryUpdatesObservedRegistrationState() {
     var attemptCount = 0
     let manager = EmergencyShortcutManager(
