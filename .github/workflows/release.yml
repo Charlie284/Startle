@@ -88,6 +88,9 @@ jobs:
     needs: build
     runs-on: macos-15
     timeout-minutes: 10
+    concurrency:
+      group: release-appcast
+      cancel-in-progress: false
     environment: release
     permissions:
       contents: write
@@ -177,6 +180,31 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          latest_tag=$(
+            gh release list --limit 100 --json tagName --jq '.[].tagName' | \
+              /usr/bin/ruby -rrubygems -e '
+                versions = []
+                STDIN.each_line do |line|
+                  tag = line.strip
+                  next unless tag.match?(/\Av[0-9]/)
+                  begin
+                    versions << [Gem::Version.new(tag.sub(/\Av/, "")), tag]
+                  rescue ArgumentError
+                  end
+                end
+                latest = versions.max_by { |entry| entry[0] }
+                puts latest[1] if latest
+              '
+          )
+          if [ -z "$latest_tag" ]; then
+            echo "Could not determine the latest versioned release." >&2
+            exit 70
+          fi
+          if [ "$GITHUB_REF_NAME" != "$latest_tag" ]; then
+            echo "Keeping the update feed on newer release $latest_tag."
+            exit 0
+          fi
+
           if gh release view appcast >/dev/null 2>&1; then
             gh release upload appcast build/update-feed/appcast.xml --clobber
           else

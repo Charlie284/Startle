@@ -141,6 +141,16 @@ struct SafetyView: View {
               })
           )
           .disabled(store.values.safety.neverRunAtLogin)
+          if state.launchAtLogin.requiresApproval {
+            HStack {
+              Label("Approval is required in System Settings.", systemImage: "gear.badge")
+                .foregroundStyle(.secondary)
+              Spacer()
+              Button("Open Login Items Settings…") {
+                state.launchAtLogin.openSystemSettings()
+              }
+            }
+          }
         }.padding(8)
       }
     }

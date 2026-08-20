@@ -14,6 +14,7 @@ extension SMAppService: LaunchAtLoginService {}
 @MainActor @Observable
 public final class LaunchAtLoginManager {
   public private(set) var isEnabled = false
+  public private(set) var requiresApproval = false
   public private(set) var errorMessage: String?
   private let service: any LaunchAtLoginService
 
@@ -24,8 +25,24 @@ public final class LaunchAtLoginManager {
     refresh()
   }
 
-  public func refresh() { isEnabled = service.status == .enabled }
+  public func refresh() {
+    switch service.status {
+    case .enabled:
+      isEnabled = true
+      requiresApproval = false
+    case .requiresApproval:
+      isEnabled = true
+      requiresApproval = true
+    case .notRegistered, .notFound:
+      isEnabled = false
+      requiresApproval = false
+    @unknown default:
+      isEnabled = false
+      requiresApproval = false
+    }
+  }
   public func clearError() { errorMessage = nil }
+  public func openSystemSettings() { SMAppService.openSystemSettingsLoginItems() }
 
   public func reconcile(forbidden: Bool) {
     refresh()
@@ -37,6 +54,10 @@ public final class LaunchAtLoginManager {
 
   public func setEnabled(_ enabled: Bool, forbidden: Bool) {
     guard !forbidden || !enabled else { return }
+    if enabled, service.status == .enabled || service.status == .requiresApproval {
+      refresh()
+      return
+    }
     do {
       if enabled {
         try service.register()
