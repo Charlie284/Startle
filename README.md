@@ -103,6 +103,17 @@ swift test
 
 `Assets.xcassets/AppIcon.appiconset` contains the minimal jumpscare-face icon at every required macOS size. The editable square source is retained at `Design/AppIconMaster.svg`, with 1024px PNG and ICNS exports alongside it. Run `Scripts/generate-app-icons.sh` after editing the SVG to refresh every export. `SampleVideoMetadata.json` documents placeholder media metadata; no jumpscare video is included.
 
+## Documentation
+
+Guides in [docs/](docs/README.md) cover the internals in more depth:
+
+- [Architecture](docs/architecture.md) — module map and the path of a scare from timer to screen.
+- [Scheduling](docs/scheduling.md) — modes, active windows, cooldowns, and sleep/wake behavior.
+- [Video library](docs/video-library.md) — bookmarks, per-video settings, and selection modes.
+- [Safety and privacy](docs/safety-and-privacy.md) — every automatic gate, its limits, and the privacy posture.
+- [Updates and releases](docs/updates-and-releases.md) — Sparkle, unsigned previews, and the release gate.
+- [Development and testing](docs/development.md) — build commands, test coverage, and manual checks.
+
 ## Contributing and releases
 
 - [CONTRIBUTING.md](CONTRIBUTING.md) explains development and pull-request expectations.
