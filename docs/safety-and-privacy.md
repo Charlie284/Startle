@@ -1,9 +1,11 @@
 # Safety and privacy
 
 Startle exists to startle the user, so the codebase treats "should this
-interruption happen right now?" as a fail-closed question at every layer.
-Read [SAFETY.md](../SAFETY.md) for the user-facing rules; this page documents
-the machinery behind them.
+interruption happen right now?" as a fail-closed question for arming and
+triggering: scares cannot be enabled without onboarding, an enabled video,
+and a working emergency shortcut, and every firing re-validates the live
+gates. Read [SAFETY.md](../SAFETY.md) for the user-facing rules; this page
+documents the machinery behind them.
 
 ## Emergency controls
 
@@ -36,8 +38,11 @@ turns it into the first blocking reason, in this order:
 | `highVolume` | Default output device volume above `disableAboveSystemVolumePercent` (default 85%) | Always on |
 | `idleReturnGracePeriod` | Input idle > 5 min, then returned within `idleGracePeriod` (default 5 min) | `avoidAfterIdle` (default on) |
 
-Most signals refresh on a 15 s poll; sleep and session changes arrive as
-workspace notifications. The gates are re-evaluated **three times** per scare:
+Sensor reads that fail fall back to permissive defaults rather than blocking:
+a battery query failure substitutes 100% and an output-volume query failure
+substitutes 0%, so the `lowBattery` and `highVolume` gates pass when their
+signal is unavailable. Most signals refresh on a 15 s poll; sleep and session
+changes arrive as workspace notifications. The gates are re-evaluated **three times** per scare:
 by the scheduler at firing time, by the coordinator before picking media, and
 once more in the window controller's `preflight` immediately before playback
 begins.
